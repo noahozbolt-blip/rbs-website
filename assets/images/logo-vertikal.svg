@@ -1,21 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 210" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" fill="none">
   <!-- Icon Mark - centered -->
-  <rect x="99" y="0" width="62" height="62" rx="3" fill="#2d3340"/>
-  <!-- Main angular arrow element -->
-  <path d="M109 52 L130 18 L151 52 H141 L130 28 L119 52 Z" fill="white" opacity="0.92"/>
-  <!-- Arc element -->
-  <path d="M118 59 Q130 53 142 59" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.70"/>
+  <path d="M86 0H146V22H174V88H86Z" fill="#2d3340"/>
+  <path d="M99 0H146V22H174L146 54H123Z" fill="white"/>
+  <path d="M123 64H146L171 88H136Q106 88 96 66Q90 52 104 42H120Q102 52 106 68Q112 84 136 82Q151 80 151 68Z" fill="white"/>
 
   <!-- RBS - centered -->
-  <text x="130" y="108" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="44" font-weight="800" fill="#2d3340" letter-spacing="5">RBS</text>
+  <text x="130" y="128" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="44" font-weight="800" fill="#2d3340" letter-spacing="5">RBS</text>
 
   <!-- PROJEKTENTWICKLUNG - centered -->
-  <text x="130" y="130" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="#2d3340" letter-spacing="4">PROJEKTENTWICKLUNG</text>
+  <text x="130" y="150" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="#2d3340" letter-spacing="4">PROJEKTENTWICKLUNG</text>
 
   <!-- Gold separator line -->
-  <line x1="65" y1="148" x2="195" y2="148" stroke="#b8952a" stroke-width="1"/>
+  <line x1="55" y1="168" x2="205" y2="168" stroke="#b8952a" stroke-width="1"/>
 
-  <!-- Gold tagline - centered, two lines -->
-  <text x="130" y="168" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Immobilien · Neubau</text>
-  <text x="130" y="186" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Investment</text>
+  <!-- Gold tagline -->
+  <text x="130" y="190" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Immobilien · Neubau · Investment</text>
 </svg>
