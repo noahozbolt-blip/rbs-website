@@ -273,6 +273,19 @@ input, textarea, select { font-family: var(--font); }
   margin-top: 4px;
 }
 
+.logo-tagline {
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--gold-light);
+  margin-top: 5px;
+  display: block;
+  line-height: 1;
+  opacity: 0.9;
+}
+
+.nav .logo-tagline { display: none; }
+
 /* Nav Links */
 .nav-links {
   display: flex;

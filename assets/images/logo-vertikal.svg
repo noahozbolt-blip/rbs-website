@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 210" fill="none">
+  <!-- Icon Mark - centered -->
+  <rect x="99" y="0" width="62" height="62" rx="3" fill="#2d3340"/>
+  <!-- Main angular arrow element -->
+  <path d="M109 52 L130 18 L151 52 H141 L130 28 L119 52 Z" fill="white" opacity="0.92"/>
+  <!-- Arc element -->
+  <path d="M118 59 Q130 53 142 59" stroke="white" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.70"/>
+
+  <!-- RBS - centered -->
+  <text x="130" y="108" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="44" font-weight="800" fill="#2d3340" letter-spacing="5">RBS</text>
+
+  <!-- PROJEKTENTWICKLUNG - centered -->
+  <text x="130" y="130" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="#2d3340" letter-spacing="4">PROJEKTENTWICKLUNG</text>
+
+  <!-- Gold separator line -->
+  <line x1="65" y1="148" x2="195" y2="148" stroke="#b8952a" stroke-width="1"/>
+
+  <!-- Gold tagline - centered, two lines -->
+  <text x="130" y="168" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Immobilien · Neubau</text>
+  <text x="130" y="186" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Investment</text>
+</svg>
