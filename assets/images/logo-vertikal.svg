@@ -1,18 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 220" fill="none">
-  <!-- Icon Mark - centered -->
-  <path d="M86 0H146V22H174V88H86Z" fill="#2d3340"/>
-  <path d="M99 0H146V22H174L146 54H123Z" fill="white"/>
-  <path d="M123 64H146L171 88H136Q106 88 96 66Q90 52 104 42H120Q102 52 106 68Q112 84 136 82Q151 80 151 68Z" fill="white"/>
-
-  <!-- RBS - centered -->
-  <text x="130" y="128" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="44" font-weight="800" fill="#2d3340" letter-spacing="5">RBS</text>
-
-  <!-- PROJEKTENTWICKLUNG - centered -->
-  <text x="130" y="150" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="13" font-weight="700" fill="#2d3340" letter-spacing="4">PROJEKTENTWICKLUNG</text>
-
-  <!-- Gold separator line -->
-  <line x1="55" y1="168" x2="205" y2="168" stroke="#b8952a" stroke-width="1"/>
-
-  <!-- Gold tagline -->
-  <text x="130" y="190" text-anchor="middle" font-family="Inter,-apple-system,BlinkMacSystemFont,sans-serif" font-size="12.5" font-weight="400" fill="#b8952a" letter-spacing="1.5">Immobilien · Neubau · Investment</text>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1081 327">
+  <image href="logo.png" width="1081" height="327"/>
 </svg>
