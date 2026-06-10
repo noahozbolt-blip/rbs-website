@@ -880,6 +880,198 @@ input, textarea, select { font-family: var(--font); }
   margin-top: 3px;
 }
 
+/* Project Detail Button */
+.project-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 22px;
+  cursor: pointer;
+  transition: gap 0.3s ease, color 0.25s ease;
+}
+
+.project-detail-btn:hover { gap: 13px; color: var(--anthracite); }
+.project-detail-btn svg { transition: transform 0.3s ease; }
+.project-detail-btn:hover svg { transform: translateX(4px); }
+
+/* ─── Project Modal ──────────────────────── */
+.project-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.project-modal.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 1;
+  background: var(--white);
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 20px 20px 0 0;
+  transform: translateY(100%);
+  transition: transform 0.45s var(--ease-out);
+  -webkit-overflow-scrolling: touch;
+}
+
+.project-modal.open .modal-panel {
+  transform: translateY(0);
+}
+
+.modal-close {
+  position: sticky;
+  top: 16px;
+  float: right;
+  margin: 16px 16px 0 0;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  background: var(--white);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.12);
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.modal-close:hover { background: var(--off-white); }
+
+.modal-img-wrap {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+  clear: right;
+}
+
+.modal-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-img-wrap .project-status {
+  position: absolute;
+  bottom: 20px;
+  left: 24px;
+  top: auto;
+}
+
+.modal-body {
+  padding: 28px 24px 48px;
+}
+
+.modal-cat {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.modal-heading {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--dark);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.modal-loc {
+  font-size: 13px;
+  color: var(--text-gray);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 24px;
+}
+
+.modal-specs-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--mid-gray);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 28px;
+}
+
+.modal-specs-row .spec-item {
+  padding: 16px 12px;
+  text-align: center;
+  border-right: 1px solid var(--mid-gray);
+}
+
+.modal-specs-row .spec-item:last-child { border-right: none; }
+
+.modal-specs-row .spec-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.modal-specs-row .spec-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-gray);
+  margin-top: 3px;
+}
+
+.modal-desc {
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--text-gray);
+}
+
+.modal-desc p { margin-bottom: 16px; }
+.modal-desc p:last-child { margin-bottom: 0; }
+
+@media (min-width: 768px) {
+  .project-modal { align-items: center; justify-content: center; padding: 24px; }
+  .modal-panel {
+    max-width: 700px;
+    border-radius: 8px;
+    transform: scale(0.96) translateY(16px);
+    max-height: 88vh;
+  }
+  .project-modal.open .modal-panel { transform: scale(1) translateY(0); }
+  .modal-img-wrap { height: 340px; }
+  .modal-body { padding: 36px 40px 52px; }
+  .modal-heading { font-size: 30px; }
+}
+
 /* ─── Investment ────────────────────────── */
 .investment {
   padding: var(--section-v) 0;

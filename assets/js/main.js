@@ -200,4 +200,104 @@
     });
   });
 
+  /* ─── Project Modal ──────────────── */
+  const projectData = [
+    {
+      category: 'Projektentwicklung',
+      title: 'Bestandsentwicklung',
+      location: 'Deutschland',
+      status: 'Aktiv',
+      statusClass: 'status-complete',
+      img: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80',
+      specs: [
+        { value: '50+', label: 'Wohneinheiten' },
+        { value: '>10.000', label: 'qm Mietfläche' },
+        { value: 'Aktiv', label: 'Bewirtschaftung' }
+      ],
+      desc: '<p>Entwicklung und nachhaltige Bewirtschaftung von Wohn- und Bestandsimmobilien mit über 50 Einheiten und mehr als 10.000 Quadratmetern vermietbarer Fläche.</p><p>RBS Projektentwicklung GbR entwickelt und verwaltet diesen Bestand wirtschaftlich fundiert — mit Fokus auf langfristige Wertschöpfung, stabile Mietrenditen und substanzielle Qualität in der Immobilienbewirtschaftung.</p>'
+    },
+    {
+      category: 'Ambulant betreutes Wohnen & Gastronomie',
+      title: 'Soziales Wohnprojekt Niedererbach',
+      location: 'Niedererbach, Rheinland-Pfalz',
+      status: 'In Betrieb',
+      statusClass: 'status-complete',
+      img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
+      specs: [
+        { value: '15', label: 'Einheiten' },
+        { value: 'Gastro', label: 'Gastronomie' },
+        { value: 'Sozial', label: 'Betreuung' }
+      ],
+      desc: '<p>Das Objekt in Niedererbach wird als ambulant betreutes Wohnangebot betrieben und bietet Menschen mit Unterstützungsbedarf die Möglichkeit eines selbstbestimmten Wohnens in einem geeigneten und betreuten Umfeld.</p><p>Ergänzend hierzu wurde eine Gastronomie etabliert, die sowohl den Bewohnern als auch der Öffentlichkeit zur Verfügung steht. Durch die Wiederbelebung eines gastronomischen Angebots im Ort wird ein Beitrag zur Stärkung der lokalen Infrastruktur und zur Belebung des Dorfkerns geleistet.</p><p>Die Gaststätte dient als sozialer Treffpunkt für Einwohner und Besucher und ermöglicht darüber hinaus die Bestellung und Abholung von Speisen. Hierdurch wurde ein Angebot geschaffen, das die Attraktivität des Ortskerns erhöht und die örtliche Nahversorgung ergänzt.</p><p>Das Gesamtobjekt verbindet soziale Betreuung mit einem öffentlich zugänglichen Gastronomiebetrieb und trägt damit zur nachhaltigen Stärkung des Gemeinwesens sowie zur Förderung des gesellschaftlichen Miteinanders in Niedererbach bei.</p>'
+    },
+    {
+      category: 'Revitalisierung & Wohnungsbau',
+      title: 'Projekt Flacht',
+      location: 'Flacht',
+      status: 'In Planung',
+      statusClass: 'status-planning',
+      img: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80',
+      specs: [
+        { value: '3', label: 'Nutzungsarten' },
+        { value: 'Revita.', label: 'Maßnahme' },
+        { value: '2025', label: 'Start' }
+      ],
+      desc: '<p>Das Projekt Flacht befindet sich derzeit in der Entkernungs-, Abriss- und Planungsphase. Ziel des Vorhabens ist die nachhaltige Revitalisierung einer Bestandsimmobilie sowie die Schaffung von dringend benötigtem Wohnraum für unterschiedliche Bevölkerungsgruppen.</p><p>Nach aktuellem Planungsstand ist eine Kombination aus ambulant betreutem Wohnen, Eigentumswohnungen sowie Mietwohnungen vorgesehen. Durch diesen Nutzungsmix soll sowohl den Bedürfnissen von Menschen mit Unterstützungsbedarf als auch dem allgemeinen Wohnraumbedarf Rechnung getragen werden.</p><p>Ein besonderer Schwerpunkt liegt auf der Schaffung von bezahlbarem Wohnraum für Familien, Berufstätige und Senioren. Gleichzeitig sollen einzelne Wohneinheiten als Eigentumswohnungen entwickelt werden, um eine ausgewogene Bewohnerstruktur und langfristige Investitionen in den Standort zu fördern.</p><p>Das geplante ambulant betreute Wohnen soll Menschen mit Unterstützungsbedarf die Möglichkeit bieten, in einem selbstbestimmten Umfeld zu leben und gleichzeitig bedarfsgerechte Betreuung in Anspruch nehmen zu können.</p><p>Das Projekt verfolgt insgesamt das Ziel, bestehenden Gebäudebestand nachhaltig zu modernisieren, die Wohnraumsituation vor Ort zu verbessern und einen langfristigen Beitrag zur sozialen und städtebaulichen Entwicklung der Gemeinde Flacht zu leisten.</p>'
+    }
+  ];
+
+  const projectModal = document.getElementById('projectModal');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const modalClose = document.getElementById('modalClose');
+
+  function openModal(index) {
+    const p = projectData[index];
+    if (!p || !projectModal) return;
+
+    document.getElementById('modalImg').src = p.img;
+    document.getElementById('modalImg').alt = p.title;
+
+    const badge = document.getElementById('modalBadge');
+    badge.textContent = p.status;
+    badge.className = 'project-status ' + p.statusClass;
+
+    document.getElementById('modalCat').textContent = p.category;
+    document.getElementById('modalHeading').textContent = p.title;
+    document.getElementById('modalLoc').innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ' + p.location;
+
+    document.getElementById('modalSpecsRow').innerHTML = p.specs.map(s =>
+      '<div class="spec-item"><div class="spec-value">' + s.value + '</div><div class="spec-label">' + s.label + '</div></div>'
+    ).join('');
+
+    document.getElementById('modalDesc').innerHTML = p.desc;
+
+    projectModal.setAttribute('aria-hidden', 'false');
+    projectModal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    // scroll panel to top
+    const panel = projectModal.querySelector('.modal-panel');
+    if (panel) panel.scrollTop = 0;
+  }
+
+  function closeModal() {
+    if (!projectModal) return;
+    projectModal.classList.remove('open');
+    projectModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  if (projectModal) {
+    if (modalClose) modalClose.addEventListener('click', closeModal);
+    if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+  }
+
+  document.querySelectorAll('[data-project]').forEach(card => {
+    card.addEventListener('click', () => openModal(parseInt(card.dataset.project)));
+  });
+
 })();
