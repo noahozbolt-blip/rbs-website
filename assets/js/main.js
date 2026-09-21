@@ -130,28 +130,50 @@
     }, { passive: true });
   }
 
-  /* ─── Contact Form ───────────────── */
+  /* ─── Contact Form (Netlify Forms) ─── */
   const form = document.querySelector('.contact-form');
   const successMsg = document.querySelector('.form-success');
+  const errorMsg = document.querySelector('.form-error');
+
+  function encodeFormData(data) {
+    return Array.from(data.entries())
+      .map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value))
+      .join('&');
+  }
 
   if (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
 
       const btn = form.querySelector('[type="submit"]');
-      const originalText = btn.textContent;
-      btn.textContent = 'Wird gesendet…';
+      const btnLabel = btn.querySelector('.btn-label');
+      const originalText = btnLabel.textContent;
+      btnLabel.textContent = 'Wird gesendet…';
       btn.disabled = true;
+      if (successMsg) successMsg.style.display = 'none';
+      if (errorMsg) errorMsg.style.display = 'none';
 
-      setTimeout(() => {
-        form.reset();
-        btn.textContent = originalText;
-        btn.disabled = false;
-        if (successMsg) {
-          successMsg.style.display = 'block';
-          setTimeout(() => { successMsg.style.display = 'none'; }, 5000);
-        }
-      }, 1600);
+      fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: encodeFormData(new FormData(form))
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Netlify Forms response: ' + response.status);
+          form.reset();
+          if (successMsg) {
+            successMsg.style.display = 'block';
+            setTimeout(() => { successMsg.style.display = 'none'; }, 6000);
+          }
+        })
+        .catch((error) => {
+          console.error('Kontaktformular-Fehler:', error);
+          if (errorMsg) errorMsg.style.display = 'block';
+        })
+        .finally(() => {
+          btnLabel.textContent = originalText;
+          btn.disabled = false;
+        });
     });
   }
 

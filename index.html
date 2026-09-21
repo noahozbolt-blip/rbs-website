@@ -602,7 +602,11 @@
               wir antworten schnell und diskret.
             </p>
 
-            <form class="contact-form reveal reveal-delay-3" novalidate>
+            <form class="contact-form reveal reveal-delay-3" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+              <input type="hidden" name="form-name" value="contact">
+              <p class="form-bot-field">
+                <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
+              </p>
 
               <div class="form-row">
                 <div class="form-group">
@@ -649,7 +653,7 @@
               </p>
 
               <button type="submit" class="btn btn-dark">
-                Nachricht senden
+                <span class="btn-label">Nachricht senden</span>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="2" y1="8" x2="14" y2="8"/><polyline points="9 3 14 8 9 13"/>
                 </svg>
@@ -657,6 +661,10 @@
 
               <div class="form-success" role="alert">
                 Vielen Dank für Ihre Nachricht. Wir melden uns schnellstmöglich bei Ihnen.
+              </div>
+              <div class="form-error" role="alert">
+                Es gab ein Problem beim Senden. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt an
+                <a href="mailto:info@rbsprojektentwicklung.de">info@rbsprojektentwicklung.de</a>.
               </div>
 
             </form>

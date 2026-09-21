@@ -1256,6 +1256,30 @@ input, textarea, select { font-family: var(--font); }
   margin-top: 16px;
 }
 
+.form-error {
+  display: none;
+  padding: 20px;
+  background: rgba(200,60,50,.08);
+  border: 1px solid rgba(200,60,50,.25);
+  border-radius: var(--radius);
+  color: #b3352a;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 16px;
+}
+
+.form-error a { color: inherit; text-decoration: underline; }
+
+/* Honeypot — hidden from real visitors, catches bots */
+.form-bot-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 /* Contact Info */
 .contact-info { }
 
