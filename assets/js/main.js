@@ -258,7 +258,7 @@
       location: 'Flacht',
       status: 'In Planung',
       statusClass: 'status-planning',
-      img: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1200&q=80',
+      img: 'assets/images/flacht-lageplan.jpg',
       specs: [
         { value: '3', label: 'Nutzungsarten' },
         { value: 'Revita.', label: 'Maßnahme' },

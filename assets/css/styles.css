@@ -805,7 +805,7 @@ input, textarea, select { font-family: var(--font); }
   border-radius: 100px;
 }
 
-.status-planning  { background: rgba(184,149,42,.15); color: var(--gold); border: 1px solid rgba(184,149,42,.3); }
+.status-planning  { background: rgba(255,251,240,.96); color: var(--gold); border: 1px solid rgba(184,149,42,.45); }
 .status-building  { background: rgba(45,51,64,.15); color: var(--anthracite); border: 1px solid rgba(45,51,64,.3); }
 .status-complete  { background: rgba(30,130,80,.12); color: #1a7a4a; border: 1px solid rgba(30,130,80,.25); }
 .status-3d        { background: var(--anthracite); color: var(--white); border: 1px solid var(--anthracite); }
