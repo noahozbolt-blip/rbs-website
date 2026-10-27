@@ -239,20 +239,6 @@
       desc: '<p>Entwicklung und nachhaltige Bewirtschaftung von Wohn- und Bestandsimmobilien mit über 50 Einheiten und mehr als 10.000 Quadratmetern vermietbarer Fläche.</p><p>RBS Projektentwicklung GbR entwickelt und verwaltet diesen Bestand wirtschaftlich fundiert — mit Fokus auf langfristige Wertschöpfung, stabile Mietrenditen und substanzielle Qualität in der Immobilienbewirtschaftung.</p>'
     },
     {
-      category: 'Ambulant betreutes Wohnen & Gastronomie',
-      title: 'Soziales Wohnprojekt Niedererbach',
-      location: 'Niedererbach, Rheinland-Pfalz',
-      status: 'In Betrieb',
-      statusClass: 'status-complete',
-      img: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
-      specs: [
-        { value: '15', label: 'Einheiten' },
-        { value: 'Gastro', label: 'Gastronomie' },
-        { value: 'Sozial', label: 'Betreuung' }
-      ],
-      desc: '<p>Das Objekt in Niedererbach wird als ambulant betreutes Wohnangebot betrieben und bietet Menschen mit Unterstützungsbedarf die Möglichkeit eines selbstbestimmten Wohnens in einem geeigneten und betreuten Umfeld.</p><p>Ergänzend hierzu wurde eine Gastronomie etabliert, die sowohl den Bewohnern als auch der Öffentlichkeit zur Verfügung steht. Durch die Wiederbelebung eines gastronomischen Angebots im Ort wird ein Beitrag zur Stärkung der lokalen Infrastruktur und zur Belebung des Dorfkerns geleistet.</p><p>Die Gaststätte dient als sozialer Treffpunkt für Einwohner und Besucher und ermöglicht darüber hinaus die Bestellung und Abholung von Speisen. Hierdurch wurde ein Angebot geschaffen, das die Attraktivität des Ortskerns erhöht und die örtliche Nahversorgung ergänzt.</p><p>Das Gesamtobjekt verbindet soziale Betreuung mit einem öffentlich zugänglichen Gastronomiebetrieb und trägt damit zur nachhaltigen Stärkung des Gemeinwesens sowie zur Förderung des gesellschaftlichen Miteinanders in Niedererbach bei.</p>'
-    },
-    {
       category: 'Revitalisierung & Wohnungsbau',
       title: 'Projekt Flacht',
       location: 'Flacht',

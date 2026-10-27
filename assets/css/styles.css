@@ -856,6 +856,14 @@ a.project-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 4
   margin-bottom: 16px;
 }
 
+.project-note {
+  margin: -16px 0 24px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--gold);
+}
+
 .project-desc {
   font-size: 14.5px;
   line-height: 1.7;
