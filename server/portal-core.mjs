@@ -132,6 +132,17 @@ export async function addEvent(client, caseId, actorId, action, detail = {}) {
     [randomUUID(), caseId, actorId, action, JSON.stringify(detail)]);
 }
 
+export async function prepareUnclaimedCase(db, id, prepared) {
+  return transaction(db, async client => {
+    const result = await client.query(
+      'UPDATE rbs_portal_cases SET summary=$1,missing=$2,next_step=$3,draft=$4,preparation_kind=$5,version=version+1,updated_at=now() ' +
+      "WHERE id=$6 AND owner_id IS NULL AND version=1 AND draft_state='suggested' RETURNING id",
+      [prepared.summary, JSON.stringify(prepared.missing), prepared.next_step, prepared.draft, prepared.preparation_kind, id]);
+    if (result.rows.length) await addEvent(client, id, null, 'prepared', { engine: prepared.preparation_kind });
+    return result.rows.length === 1;
+  });
+}
+
 export async function listCases(db, cursor) {
   let values = [], where = '';
   if (cursor) {

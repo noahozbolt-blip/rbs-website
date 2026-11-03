@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { randomUUID } from 'node:crypto';
-import { resolveMember, createCase, mutateCase, getCase, listCases, normalizeInput, prepareWithRules } from '../server/portal-core.mjs';
+import { resolveMember, createCase, mutateCase, getCase, listCases, normalizeInput, prepareWithRules, prepareUnclaimedCase } from '../server/portal-core.mjs';
 
 let pg, db, member, second, project;
 const user = { id: 'verified-identity-one', email: 'pilot@example.invalid', confirmedAt: '2026-11-03T10:00:00Z', roles: ['rbs-pilot'] };
@@ -44,6 +44,14 @@ test('website events are idempotent without losing the original source', async (
 test('different content with a reused request id does not disappear as a duplicate', async () => {
   const other = await createCase(db, { ...input, message: 'Ein anderes, ebenfalls synthetisches Vorhaben.' }, { source: 'website' });
   assert.notEqual(other.item.id, project.id);
+});
+test('background preparation can enrich a new request but never an already claimed one', async () => {
+  const first = await createCase(db, { ...input, request_id: 'background-test' }, { source: 'website' });
+  const prepared = { summary: 'Synthetisch vorbereitet.', missing: [], next_step: 'Unterlagen prüfen', draft: 'Synthetischer Entwurf.', preparation_kind: 'ai' };
+  assert.equal(await prepareUnclaimedCase(db, first.item.id, prepared), true);
+  const secondCase = await createCase(db, { ...input, request_id: 'background-claimed-test' }, { source: 'website' });
+  await mutateCase(db, secondCase.item.id, member, { action: 'claim', version: 1 });
+  assert.equal(await prepareUnclaimedCase(db, secondCase.item.id, prepared), false);
 });
 test('claim establishes responsibility and stale edits cannot overwrite it', async () => {
   const claimed = await mutateCase(db, project.id, member, { action: 'claim', version: project.version });

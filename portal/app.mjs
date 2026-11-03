@@ -149,6 +149,7 @@ function renderList() {
     (state.query ? 'Versuchen Sie einen anderen Suchbegriff.' : 'Neue Websiteanfragen erscheinen automatisch. Anfragen aus E-Mails oder Gesprächen können Sie über „Neu“ aufnehmen.') + '</p></div>';
   const counts = navCounts();
   for (const key of Object.keys(counts)) document.getElementById('count-' + key).textContent = counts[key];
+  app.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === state.view));
   document.getElementById('pagination').innerHTML = state.next ? '<button class="btn full" type="button" data-action="more">Weitere Anfragen laden</button><p class="pending-count">Suche und Zähler beziehen sich auf die geladenen Anfragen.</p>' : '';
 }
 function renderDetail() {
