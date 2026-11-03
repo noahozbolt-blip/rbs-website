@@ -7,7 +7,7 @@ const out = resolve(root, 'dist');
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 const names = await readdir(root);
-for (const name of names.filter(name => name.endsWith('.html') || ['assets', '3d', 'downloads', 'robots.txt', 'sitemap.xml'].includes(name))) {
+for (const name of names.filter(name => name.endsWith('.html') || ['assets', '3d', 'downloads', 'robots.txt', 'sitemap.xml', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'apple-touch-icon.png'].includes(name))) {
   await cp(resolve(root, name), resolve(out, name), { recursive: true });
 }
 // Exact static files keep Netlify Pretty URLs. Unknown routes remain real 404s.
