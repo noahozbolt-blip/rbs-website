@@ -6,3 +6,6 @@ node_modules/
 __pycache__/
 .env
 .env.*
+
+node_modules/
+portal/app.js
