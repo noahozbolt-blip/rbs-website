@@ -91,11 +91,11 @@ export async function resolveMember(db, user) {
     const email = trim(user.email, 254).toLowerCase();
     if (!member) {
       const count = (await client.query('SELECT count(*)::int AS n FROM rbs_portal_members')).rows[0].n;
-      if (count !== 0 || !user.confirmedAt || !email) {
+      if (count >= 2 || !user.confirmedAt || !email) {
         throw new PortalError(403, 'Für dieses Konto ist kein RBS-Zugang freigegeben.');
       }
-      member = (await client.query('INSERT INTO rbs_portal_members (id, identity_id, email) VALUES ($1,$2,$3) RETURNING *',
-        [randomUUID(), user.id, email])).rows[0];
+      member = (await client.query('INSERT INTO rbs_portal_members (id, identity_id, email, display_name) VALUES ($1,$2,$3,$4) RETURNING *',
+        [randomUUID(), user.id, email, trim(user.name, 100) || 'RBS Geschäftsführung'])).rows[0];
     }
     if (!member.active) throw new PortalError(403, 'Dieser RBS-Zugang ist deaktiviert.');
     if (email && member.email !== email) {

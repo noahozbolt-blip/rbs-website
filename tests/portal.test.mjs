@@ -2,7 +2,6 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
-import { randomUUID } from 'node:crypto';
 import { resolveMember, createCase, mutateCase, getCase, listCases, normalizeInput, prepareWithRules, prepareUnclaimedCase } from '../server/portal-core.mjs';
 
 let pg, db, member, second, project;
@@ -29,7 +28,13 @@ test('first verified invited account receives a stable internal identity', async
   member = await resolveMember(db, user);
   assert.ok(member.id);
   assert.notEqual(member.id, user.email);
-  await assert.rejects(resolveMember(db, { ...user, id: 'second-unapproved-identity' }), { status: 403 });
+  await assert.rejects(resolveMember(db, { ...user, id: 'second-unapproved-identity', roles: [] }), { status: 403 });
+});
+test('a second invited operator shares the workspace; further identities remain blocked', async () => {
+  second = await resolveMember(db, { ...user, id: 'verified-identity-two', email: 'second@example.invalid', name: 'Zweiter Testbenutzer' });
+  assert.notEqual(second.id, member.id);
+  assert.equal(second.display_name, 'Zweiter Testbenutzer');
+  await assert.rejects(resolveMember(db, { ...user, id: 'third-identity' }), { status: 403 });
 });
 test('website events are idempotent without losing the original source', async () => {
   const first = await createCase(db, input, { source: 'website' });
@@ -56,13 +61,12 @@ test('background preparation can enrich a new request but never an already claim
 test('claim establishes responsibility and stale edits cannot overwrite it', async () => {
   const claimed = await mutateCase(db, project.id, member, { action: 'claim', version: project.version });
   assert.equal(claimed.owner_id, member.id); assert.equal(claimed.status, 'in_progress');
+  await assert.rejects(mutateCase(db, project.id, second, { action: 'claim', version: project.version }), { status: 409 });
+  await assert.rejects(mutateCase(db, project.id, second, { action: 'claim', version: claimed.version }), { status: 409 });
   await assert.rejects(mutateCase(db, project.id, member, { action: 'status', version: project.version, status: 'done' }), { status: 409 });
   project = claimed;
 });
 test('another actor cannot edit an owned request', async () => {
-  second = { id: randomUUID() };
-  await pg.query('INSERT INTO rbs_portal_members(id,identity_id,email) VALUES($1,$2,$3)',
-    [second.id, 'synthetic-second-actor', 'second@example.invalid']);
   await assert.rejects(mutateCase(db, project.id, second, { action: 'status', version: project.version, status: 'done' }), { status: 403 });
 });
 test('verified email change keeps the same member, ownership, notes and requests', async () => {

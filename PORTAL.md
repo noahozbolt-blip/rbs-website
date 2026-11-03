@@ -12,8 +12,8 @@ assign the application role rbs-pilot. Role changes take effect at the next
 login or token refresh.
 
 The API requires a verified Identity session and the application role.
-The first confirmed operator gets a separate stable internal UUID. The pilot
-currently allows only one initial member; additional members require an
+Each confirmed operator gets a separate stable internal UUID. The pilot
+currently allows two invited members; additional members require an
 intentional extension. Email is contact metadata, never an ownership key.
 The operator can request a verified email change under **Konto**.
 
