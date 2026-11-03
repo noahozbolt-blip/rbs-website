@@ -18,35 +18,18 @@
   <meta property="og:locale" content="de_DE">
 
   <!-- Canonical -->
-  <link rel="canonical" href="/">
+  <link rel="canonical" href="https://www.rbs-projektentwicklung.de/">
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Styles -->
   <link rel="stylesheet" href="assets/css/styles.css">
-</head>
+  <link rel="stylesheet" href="/assets/css/intake.css">
+<noscript><style>.reveal,.reveal-left,.reveal-right{opacity:1;transform:none}.hero-bg{opacity:1}</style></noscript></head>
 <body>
 
   <!-- ─── Cookie Banner ──────────────────────────────────────────── -->
-  <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis">
-    <div class="container">
-      <div class="cookie-inner">
-        <p class="cookie-text">
-          Wir verwenden technisch notwendige Cookies, um diese Website zu betreiben. Weitere Informationen finden Sie in unserer
-          <a href="datenschutz.html">Datenschutzerklärung</a> und im <a href="impressum.html">Impressum</a>.
-        </p>
-        <div class="cookie-actions">
-          <button class="cookie-decline">Ablehnen</button>
-          <button class="cookie-accept">Akzeptieren</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ─── Navigation ─────────────────────────────────────────────── -->
+<!-- ─── Navigation ─────────────────────────────────────────────── -->
   <nav class="nav" role="navigation" aria-label="Hauptnavigation">
     <div class="container">
 
@@ -126,37 +109,13 @@
     </section>
 
     <!-- ─── Stats ─────────────────────────────────────────────────── -->
-    <section class="stats" aria-label="Kennzahlen">
+    <section class="stats" aria-label="Schwerpunkte">
       <div class="stats-inner">
 
-        <div class="stat-item reveal">
-          <div class="stat-number">
-            <span data-counter="6">0</span>+
-          </div>
-          <div class="stat-label">Wohneinheiten</div>
-        </div>
-
-        <div class="stat-item reveal reveal-delay-1">
-          <div class="stat-number">
-            <span data-counter="100">0</span>%
-          </div>
-          <div class="stat-label">Investitionsfokus</div>
-        </div>
-
-        <div class="stat-item reveal reveal-delay-2">
-          <div class="stat-number">
-            <span data-counter="3">0</span>
-          </div>
-          <div class="stat-label">Aktive Projekte</div>
-        </div>
-
-        <div class="stat-item reveal reveal-delay-3">
-          <div class="stat-number">
-            A<span style="color:var(--gold-light)">+</span>
-          </div>
-          <div class="stat-label">Energiestandard</div>
-        </div>
-
+        <div class="stat-item reveal"><div class="stat-number stat-word">Entwicklung</div><div class="stat-label">Vom Grundstück zum Projekt</div></div>
+        <div class="stat-item reveal reveal-delay-1"><div class="stat-number stat-word">Bestand</div><div class="stat-label">Substanz weiterentwickeln</div></div>
+        <div class="stat-item reveal reveal-delay-2"><div class="stat-number stat-word">Koordination</div><div class="stat-label">Gewerke und Abläufe verbinden</div></div>
+        <div class="stat-item reveal reveal-delay-3"><div class="stat-number stat-word">Partnerschaft</div><div class="stat-label">Projekte gemeinsam denken</div></div>
       </div>
     </section>
 
@@ -223,7 +182,7 @@
           <div class="about-image reveal-right">
             <div class="about-img-wrap">
               <img
-                src="https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?auto=format&fit=crop&w=900&q=80"
+                src="assets/images/rbs-architecture-symbol.jpg"
                 alt="Moderne Architektur — RBS Projektentwicklung"
                 loading="lazy"
               >
@@ -355,7 +314,7 @@
           <article class="project-card featured reveal" data-project="0">
             <div class="project-img">
               <img
-                src="https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=960&q=80"
+                src="assets/images/rbs-property-symbol.jpg"
                 alt="Bestandsentwicklung — RBS Projektentwicklung"
                 loading="lazy"
               >
@@ -364,6 +323,7 @@
             <div class="project-info">
               <div class="project-category">Projektentwicklung</div>
               <h3 class="project-title">Bestandsentwicklung</h3>
+              <p class="project-note">Symbolbild – kein konkretes RBS-Objekt</p>
               <p class="project-location">
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -621,7 +581,7 @@
                 Sie besitzen ein Grundstück oder eine Bestandsimmobilie mit Entwicklungspotenzial?
                 Wir freuen uns auf ein vertrauliches Erstgespräch — diskret, verbindlich und auf Augenhöhe.
               </p>
-              <a href="#kontakt" class="btn btn-gold">
+              <a href="/projekt-anbieten" class="btn btn-gold">
                 Gespräch anfragen
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <line x1="2" y1="8" x2="14" y2="8"/><polyline points="9 3 14 8 9 13"/>
@@ -637,6 +597,12 @@
     <!-- ─── Contact ───────────────────────────────────────────────── -->
     <section class="contact" id="kontakt" aria-label="Kontakt">
       <div class="container">
+            <div class="intake-choices" aria-label="Passenden Anfrageweg wählen">
+              <a class="intake-choice" href="/projekt-anbieten"><div class="choice-number">01 / GRUNDSTÜCK &amp; BESTAND</div><h3>Projekt anbieten.</h3><p>Ort, Ausgangslage und Ihre Vorstellung für den ersten Kontakt.</p><span>Projekt vorstellen →</span></a>
+              <a class="intake-choice" href="/baupartner"><div class="choice-number">02 / GEWERKE &amp; FACHPLANER</div><h3>Baupartner werden.</h3><p>Unternehmen, Fachgebiet und Einsatzregion auf einen Blick.</p><span>Unternehmen vorstellen →</span></a>
+              <a class="intake-choice" href="/kooperation"><div class="choice-number">03 / IDEEN &amp; KOOPERATIONEN</div><h3>Zusammenarbeit besprechen.</h3><p>Ein klarer Gesprächsanlass für den persönlichen Austausch.</p><span>Gespräch anfragen →</span></a>
+            </div>
+
         <div class="contact-grid">
 
           <!-- Form -->
@@ -649,8 +615,8 @@
               wir antworten schnell und diskret.
             </p>
 
-            <form class="contact-form reveal reveal-delay-3" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
-              <input type="hidden" name="form-name" value="contact">
+            <form class="contact-form reveal reveal-delay-3" name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/danke" data-rbs-intake data-profile="contact">
+              <input type="hidden" name="form-name" value="contact"><input type="hidden" name="request_kind" value="contact"><input type="hidden" name="request_id" value=""><input type="hidden" name="project_id" value=""><input type="hidden" name="source" value=""><input type="hidden" name="utm_source" value=""><input type="hidden" name="utm_medium" value=""><input type="hidden" name="utm_campaign" value=""><input type="hidden" name="utm_content" value="">
               <p class="form-bot-field">
                 <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off"></label>
               </p>
@@ -658,7 +624,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label for="name">Name *</label>
-                  <input type="text" id="name" name="name" placeholder="Ihr vollständiger Name" required>
+                  <input type="text" id="name" name="name" placeholder="Ihr vollständiger Name" autocomplete="name" maxlength="250" required>
                 </div>
                 <div class="form-group">
                   <label for="company">Unternehmen</label>
@@ -669,7 +635,7 @@
               <div class="form-row">
                 <div class="form-group">
                   <label for="email">E-Mail *</label>
-                  <input type="email" id="email" name="email" placeholder="ihre@email.de" required>
+                  <input type="email" id="email" name="email" placeholder="ihre@email.de" autocomplete="email" maxlength="254" required>
                 </div>
                 <div class="form-group">
                   <label for="phone">Telefon</label>
@@ -691,12 +657,12 @@
 
               <div class="form-group">
                 <label for="message">Nachricht *</label>
-                <textarea id="message" name="message" placeholder="Ihre Nachricht …" required></textarea>
+                <textarea id="message" name="message" placeholder="Ihre Nachricht …" maxlength="3000" required></textarea>
               </div>
 
               <p class="form-privacy">
-                Mit dem Absenden stimmen Sie der Verarbeitung Ihrer Daten gemäß unserer
-                <a href="datenschutz.html">Datenschutzerklärung</a> zu. *&thinsp;Pflichtfelder
+                Ihre Angaben werden zur Bearbeitung Ihrer Anfrage verarbeitet. Weitere Informationen in unserer
+                <a href="datenschutz.html">Datenschutzerklärung</a>. *&thinsp;Pflichtfelder
               </p>
 
               <button type="submit" class="btn btn-dark">
@@ -706,13 +672,7 @@
                 </svg>
               </button>
 
-              <div class="form-success" role="alert">
-                Vielen Dank für Ihre Nachricht. Wir melden uns schnellstmöglich bei Ihnen.
-              </div>
-              <div class="form-error" role="alert">
-                Es gab ein Problem beim Senden. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt an
-                <a href="mailto:info@rbsprojektentwicklung.de">info@rbsprojektentwicklung.de</a>.
-              </div>
+              <p class="rbs-form-status" role="status" aria-live="polite" data-form-status hidden></p>
 
             </form>
           </div>
@@ -745,7 +705,7 @@
                 </div>
                 <div class="contact-item-text">
                   <strong>Telefon</strong>
-                  <a href="tel:+4917791060600">+49 177 9106060</a>
+                  <a href="tel:+491779106060">+49 177 9106060</a>
                 </div>
               </div>
 
@@ -777,13 +737,7 @@
 
             <!-- Map -->
             <div class="contact-map reveal reveal-delay-3">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2535.5!2d7.943!3d50.467!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47be8ff0000001%3A0x1!2sMittelstra%C3%9Fe+9%2C+56412+Niedererbach!5e0!3m2!1sde!2sde!4v1"
-                allowfullscreen
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                title="RBS Projektentwicklung — Standort Niedererbach"
-              ></iframe>
+              <a class="rbs-map-link" href="https://www.google.com/maps/search/?api=1&amp;query=Mittelstra%C3%9Fe+9%2C+56412+Niedererbach" target="_blank" rel="noopener noreferrer"><strong>RBS in Niedererbach</strong>Mittelstraße 9 · 56412 Niedererbach<span>Standort auf Google Maps öffnen ↗</span></a>
             </div>
 
           </div>
@@ -841,7 +795,7 @@
           <h4>Kontakt</h4>
           <ul class="footer-contact-list">
             <li>Mittelstraße 9<br>56412 Niedererbach</li>
-            <li><a href="tel:+4917791060600">+49 177 9106060</a></li>
+            <li><a href="tel:+491779106060">+49 177 9106060</a></li>
             <li><a href="mailto:info@rbsprojektentwicklung.de">info@rbsprojektentwicklung.de</a></li>
           </ul>
         </div>
@@ -868,6 +822,7 @@
   </button>
 
   <!-- Scripts -->
+  <script src="/assets/js/intake.js" defer></script>
   <script src="assets/js/main.js" defer></script>
 
 </body>

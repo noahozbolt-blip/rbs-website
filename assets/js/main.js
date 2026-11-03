@@ -29,6 +29,9 @@
   if (toggle && mobileNav) {
     toggle.addEventListener('click', () => {
       const open = toggle.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+      mobileNav.setAttribute('aria-hidden', String(!open));
       mobileNav.classList.toggle('open', open);
       document.body.style.overflow = open ? 'hidden' : '';
     });
@@ -36,6 +39,9 @@
     mobileNav.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
         toggle.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', 'Menü öffnen');
+        mobileNav.setAttribute('aria-hidden', 'true');
         mobileNav.classList.remove('open');
         document.body.style.overflow = '';
       });
@@ -45,7 +51,10 @@
   /* ─── Smooth Scroll ──────────────── */
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
-      const target = document.querySelector(this.getAttribute('href'));
+      const href = this.getAttribute('href');
+      if (!href || href === '#') return;
+      let target;
+      try { target = document.querySelector(href); } catch (_) { return; }
       if (!target) return;
       e.preventDefault();
       const navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 80;
@@ -130,81 +139,7 @@
     }, { passive: true });
   }
 
-  /* ─── Contact Form (Netlify Forms) ─── */
-  const form = document.querySelector('.contact-form');
-  const successMsg = document.querySelector('.form-success');
-  const errorMsg = document.querySelector('.form-error');
-
-  function encodeFormData(data) {
-    return Array.from(data.entries())
-      .map(([key, value]) => encodeURIComponent(key) + '=' + encodeURIComponent(value))
-      .join('&');
-  }
-
-  if (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-
-      const btn = form.querySelector('[type="submit"]');
-      const btnLabel = btn.querySelector('.btn-label');
-      const originalText = btnLabel.textContent;
-      btnLabel.textContent = 'Wird gesendet…';
-      btn.disabled = true;
-      if (successMsg) successMsg.style.display = 'none';
-      if (errorMsg) errorMsg.style.display = 'none';
-
-      fetch('/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: encodeFormData(new FormData(form))
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error('Netlify Forms response: ' + response.status);
-          form.reset();
-          if (successMsg) {
-            successMsg.style.display = 'block';
-            setTimeout(() => { successMsg.style.display = 'none'; }, 6000);
-          }
-        })
-        .catch((error) => {
-          console.error('Kontaktformular-Fehler:', error);
-          if (errorMsg) errorMsg.style.display = 'block';
-        })
-        .finally(() => {
-          btnLabel.textContent = originalText;
-          btn.disabled = false;
-        });
-    });
-  }
-
-  /* ─── Cookie Banner ──────────────── */
-  const banner = document.querySelector('.cookie-banner');
-  const acceptBtn = document.querySelector('.cookie-accept');
-  const declineBtn = document.querySelector('.cookie-decline');
-
-  const COOKIE_KEY = 'rbs_cookie_consent';
-
-  function hideBanner() {
-    if (banner) banner.classList.remove('visible');
-  }
-
-  if (banner && !localStorage.getItem(COOKIE_KEY)) {
-    setTimeout(() => banner.classList.add('visible'), 1200);
-  }
-
-  if (acceptBtn) {
-    acceptBtn.addEventListener('click', () => {
-      localStorage.setItem(COOKIE_KEY, 'accepted');
-      hideBanner();
-    });
-  }
-
-  if (declineBtn) {
-    declineBtn.addEventListener('click', () => {
-      localStorage.setItem(COOKIE_KEY, 'declined');
-      hideBanner();
-    });
-  }
+  // Intake handling lives in intake.js. No tracking or consent storage.
 
   /* ─── Service Card Stagger ───────── */
   const serviceCards = document.querySelectorAll('.service-card');
@@ -230,13 +165,13 @@
       location: 'Deutschland',
       status: 'Aktiv',
       statusClass: 'status-complete',
-      img: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?auto=format&fit=crop&w=1200&q=80',
+      img: 'assets/images/rbs-property-symbol.jpg',
       specs: [
         { value: '50+', label: 'Wohneinheiten' },
         { value: '>10.000', label: 'qm Mietfläche' },
         { value: 'Aktiv', label: 'Bewirtschaftung' }
       ],
-      desc: '<p>Entwicklung und nachhaltige Bewirtschaftung von Wohn- und Bestandsimmobilien mit über 50 Einheiten und mehr als 10.000 Quadratmetern vermietbarer Fläche.</p><p>RBS Projektentwicklung GbR entwickelt und verwaltet diesen Bestand wirtschaftlich fundiert — mit Fokus auf langfristige Wertschöpfung, stabile Mietrenditen und substanzielle Qualität in der Immobilienbewirtschaftung.</p>'
+      desc: '<p><small>Bild: Symbolbild, kein konkretes RBS-Objekt.</small></p><p>Entwicklung und nachhaltige Bewirtschaftung von Wohn- und Bestandsimmobilien mit über 50 Einheiten und mehr als 10.000 Quadratmetern vermietbarer Fläche.</p><p>RBS Projektentwicklung GbR entwickelt und verwaltet diesen Bestand wirtschaftlich fundiert — mit Fokus auf langfristige Wertschöpfung, stabile Mietrenditen und substanzielle Qualität in der Immobilienbewirtschaftung.</p>'
     },
     {
       category: 'Revitalisierung & Wohnungsbau',
@@ -263,7 +198,7 @@
     if (!p || !projectModal) return;
 
     document.getElementById('modalImg').src = p.img;
-    document.getElementById('modalImg').alt = p.title;
+    document.getElementById('modalImg').alt = p.title + (index === 0 ? ' – Symbolbild, kein konkretes RBS-Objekt' : '');
 
     const badge = document.getElementById('modalBadge');
     badge.textContent = p.status;
