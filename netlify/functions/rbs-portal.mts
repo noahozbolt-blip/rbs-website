@@ -1,7 +1,7 @@
 import { getUser, verifyRequestOrigin } from '@netlify/identity';
 import { getDatabase } from '@netlify/database';
 import { PortalError, resolveMember, listCases, getCase, createCase, mutateCase } from '../../server/portal-core.mjs';
-import { prepareWithAI } from '../../server/portal-ai.mjs';
+import { prepareWithAI, AI_RELEASE_APPROVED } from '../../server/portal-ai.mjs';
 
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' };
@@ -19,7 +19,7 @@ export default async (request: Request, context) => {
     const path = url.pathname.replace(/^\/api\/portal\/?/, '').replace(/\/$/, '');
     if (request.method === 'GET') {
       if (path === 'me') return json({ member, pending_email: user.pendingEmail || null,
-        mail_connected: false, ai_available: Boolean(Netlify.env.get('OPENAI_BASE_URL')) });
+        mail_connected: false, ai_available: AI_RELEASE_APPROVED && Boolean(Netlify.env.get('OPENAI_BASE_URL')) });
       if (path === 'cases') return json(await listCases(db, url.searchParams.get('cursor')));
       const match = path.match(/^cases\/([a-f0-9-]{36})$/i);
       if (match) return json(await getCase(db, match[1]));

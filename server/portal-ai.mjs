@@ -1,17 +1,20 @@
 import OpenAI from 'openai';
 import { PortalError } from './portal-core.mjs';
 
+// External processing of business inquiry text requires a separate release.
+// Keep this false until the payload and destination have been approved.
+export const AI_RELEASE_APPROVED = false;
+
 export async function prepareWithAI(raw) {
+  if (!AI_RELEASE_APPROVED) throw new PortalError(503, 'Die externe KI-Auswertung ist noch nicht freigegeben. Die Vorbereitung aus den Anfrageangaben bleibt verfügbar.');
   const available = Boolean(globalThis.Netlify?.env.get('OPENAI_BASE_URL') || process.env.OPENAI_BASE_URL);
   if (!available) throw new PortalError(503, 'Die KI-Verbindung ist noch nicht aktiv. Die vorhandene Vorbereitung aus den Formularangaben bleibt verfügbar.');
   const client = new OpenAI({ timeout: 25000, maxRetries: 0 });
   const requested = globalThis.Netlify?.env.get('RBS_PORTAL_AI_MODEL') || 'gpt-5-mini';
-  // Verify the configured model against the gateway's live availability.
-  const catalog = await client.models.list();
-  if (!catalog.data.some(m => m.id === requested)) throw new PortalError(503, 'Das ausgewählte KI-Modell ist derzeit nicht verfügbar.');
   const response = await client.chat.completions.create({
     model: requested,
     max_completion_tokens: 2400,
+    reasoning_effort: 'low',
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: 'Du bereitest eingehende Geschäftsanfragen für RBS Projektentwicklung vor. ' +
@@ -22,7 +25,10 @@ export async function prepareWithAI(raw) {
         'next_step (kurzer Handlungsvorschlag) und draft (höflicher deutscher Antwortentwurf mit RBS-Signatur) zurück. ' +
         'Formuliere fehlende Angaben als Rückfragen. Bestehende Projekte dürfen nur aus project_id übernommen werden. ' +
         'Keine rechtliche oder finanzielle Entscheidung treffen. Ein Entwurf wird immer von einem Menschen geprüft.' },
-      { role: 'user', content: JSON.stringify(raw) }
+      { role: 'user', content: JSON.stringify(Object.fromEntries(
+        ['request_kind', 'project_id', 'object_type', 'city', 'area', 'planning_status',
+          'trade', 'service_region', 'availability', 'reference_summary', 'cooperation_interest', 'subject', 'message']
+          .filter(key => raw[key]).map(key => [key, raw[key]]))) }
     ]
   });
   const parsed = JSON.parse(response.choices?.[0]?.message?.content || '{}');
