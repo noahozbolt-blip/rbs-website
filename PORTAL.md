@@ -17,6 +17,14 @@ currently allows two invited members; additional members require an
 intentional extension. Email is contact metadata, never an ownership key.
 The operator can request a verified email change under **Konto**.
 
+The verified JWT context may contain only claims, without confirmedAt. In that
+case the function reads the authenticated user's own Identity profile through
+the server-only admin SDK before binding a member. A missing confirmation,
+revoked role, mismatched identity or failed lookup never grants access.
+Invitation and password recovery finish with an explicit SDK login so the
+browser session and protected API cookie agree. Workspace failures are shown
+separately from password setup; consumed invitation tokens are not retried.
+
 ## Data and actions
 
 Committed SQL migrations provision Netlify Database. Platform-signed

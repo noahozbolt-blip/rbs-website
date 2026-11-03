@@ -1,5 +1,6 @@
 import { login, logout, getUser, getSettings, handleAuthCallback, acceptInvite,
   recoverPassword, requestPasswordRecovery, updateUser, onAuthChange } from '@netlify/identity';
+import { setPasswordAndLogin } from './auth-flow.mjs';
 
 const app = document.getElementById('app');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -61,12 +62,20 @@ function renderAuth(mode = 'login', token = '') {
       const password = document.getElementById('login-password').value;
       if (setup) {
         if (password !== document.getElementById('login-repeat').value) throw new Error('Die Passwörter stimmen nicht überein.');
-        if (mode === 'invite') await acceptInvite(token, password);
-        else await recoverPassword(token, password);
+        await setPasswordAndLogin({ acceptInvite, recoverPassword, login }, mode, token, password);
         history.replaceState(null, '', '/portal/');
       } else await login(document.getElementById('login-email').value.trim(), password);
-      await beginApp();
-    } catch (error) { message(error.message || 'Die Anmeldung war nicht erfolgreich.', 'error'); }
+      // A completed invitation must never be submitted again merely because
+      // opening the workspace failed. Separate account and workspace errors.
+      await openAuthenticatedWorkspace();
+    } catch (error) {
+      if (setup && error.passwordSaved) {
+        history.replaceState(null, '', '/portal/');
+        renderAuth();
+        document.getElementById('login-email').value = error.loginEmail || '';
+        message('Ihr Passwort wurde gespeichert. Bitte melden Sie sich mit Ihrer E-Mail-Adresse und diesem Passwort an.', 'success');
+      } else message(error.message || 'Die Anmeldung war nicht erfolgreich.', 'error');
+    }
     finally { if (button.isConnected) button.disabled = false; }
   });
   document.getElementById('recover')?.addEventListener('click', async event => {
@@ -77,6 +86,32 @@ function renderAuth(mode = 'login', token = '') {
     catch { message('Die Anfrage konnte gerade nicht übermittelt werden. Bitte später erneut versuchen.', 'error'); }
     finally { event.target.disabled = false; }
   });
+}
+
+async function openAuthenticatedWorkspace() {
+  try { await beginApp(); }
+  catch (error) {
+    renderAuth();
+    if (error.status === 401) {
+      message('Die Sitzung konnte nicht übernommen werden. Bitte erneut anmelden.', 'error');
+      return;
+    }
+    app.querySelector('.auth-card h2').textContent = 'Konto angemeldet.';
+    app.querySelector('.auth-card > p').textContent = 'Der Arbeitsbereich konnte noch nicht geöffnet werden.';
+    message(error.message || 'Bitte versuchen Sie es erneut.', 'error');
+    const actions = document.createElement('div');
+    actions.innerHTML = '<button id="retry-workspace" class="btn primary full" type="button">Arbeitsbereich erneut öffnen</button>' +
+      '<button id="leave-session" class="text-button" type="button">Mit anderem Konto anmelden</button>';
+    document.getElementById('auth-form').replaceWith(actions);
+    app.querySelector('.auth-links')?.remove();
+    document.getElementById('retry-workspace').addEventListener('click', async event => {
+      event.target.disabled = true;
+      await openAuthenticatedWorkspace();
+    });
+    document.getElementById('leave-session').addEventListener('click', async () => {
+      await logout(); renderAuth();
+    });
+  }
 }
 
 function navCounts() {
@@ -411,7 +446,7 @@ async function boot() {
     await getSettings();
     await handleAuthCallback();
     const user = await getUser();
-    if (user) await beginApp();
+    if (user) await openAuthenticatedWorkspace();
     else renderAuth();
   } catch (error) {
     renderAuth();

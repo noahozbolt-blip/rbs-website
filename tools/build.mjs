@@ -13,6 +13,7 @@ for (const name of names.filter(name => name.endsWith('.html') || ['assets', '3d
   await cp(resolve(root, name), resolve(out, name), { recursive: true });
 }
 await rm(resolve(out, 'portal/app.mjs'), { force: true });
+await rm(resolve(out, 'portal/auth-flow.mjs'), { force: true });
 // Exact static files keep Netlify Pretty URLs. Unknown routes remain real 404s.
 await writeFile(resolve(out, '_redirects'), '/index / 301\n');
 console.log(JSON.stringify({ publish: 'dist', staticFilesOnly: true }));

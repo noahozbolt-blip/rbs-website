@@ -1,4 +1,4 @@
-const CACHE = 'rbs-portal-shell-v1';
+const CACHE = 'rbs-portal-shell-v2';
 const STATIC = ['/portal/', '/portal/portal.css', '/portal/app.js', '/assets/icons/rbs-icon-192.png', '/assets/icons/rbs-icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(STATIC)));

@@ -1,7 +1,8 @@
-import { getUser, verifyRequestOrigin } from '@netlify/identity';
+import { getUser, admin, verifyRequestOrigin } from '@netlify/identity';
 import { getDatabase } from '@netlify/database';
 import { PortalError, resolveMember, listCases, getCase, createCase, mutateCase } from '../../server/portal-core.mjs';
 import { prepareWithAI, AI_RELEASE_APPROVED } from '../../server/portal-ai.mjs';
+import { completePortalIdentity } from '../../server/portal-auth.mjs';
 
 const headers = { 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' };
@@ -11,7 +12,8 @@ export default async (request: Request, context) => {
   try {
     if (!['GET', 'POST'].includes(request.method)) return json({ error: 'Methode nicht erlaubt.' }, 405);
     if (request.method === 'POST') verifyRequestOrigin(request);
-    const user = await getUser();
+    const session = await getUser();
+    const user = await completePortalIdentity(session, id => admin.getUser(id));
     if (!user) return json({ error: 'Bitte anmelden.' }, 401);
     const db = getDatabase();
     const member = await resolveMember(db, user);
