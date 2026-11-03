@@ -36,3 +36,4 @@
 @media(max-width:900px) { .intake-grid { grid-template-columns:1fr; gap:35px; } .intake-choices { grid-template-columns:1fr; } .intake-aside { max-width:650px; } }
 @media(max-width:600px) { .intake-hero { padding-top:125px; padding-bottom:45px; } .intake-card { padding:26px 20px; } .intake-section { padding:35px 0 60px; } .intake-card .form-row { grid-template-columns:1fr; } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *,*::before,*::after { animation-duration:.01ms!important; transition-duration:.01ms!important; } .reveal,.reveal-left,.reveal-right { opacity:1!important; transform:none!important; } }
+@media(max-width:600px) { .reveal-left,.reveal-right { transform:translateY(24px); } .investment-grid > * { min-width:0; } .investment-cta { padding:36px 24px; overflow-wrap:anywhere; } }
