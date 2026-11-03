@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from 'node:crypto';
+import { fieldValueLabel } from '../portal/field-labels.mjs';
 
 export class PortalError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -31,23 +32,23 @@ export function prepareWithRules(raw) {
   const missing = [];
   let title, summary, next;
   if (kind === 'project') {
-    title = [raw.object_type || 'Projektangebot', raw.city].filter(Boolean).join(' · ');
+    title = [fieldValueLabel('object_type', raw.object_type) || 'Projektangebot', raw.city].filter(Boolean).join(' · ');
     if (!raw.planning_status) missing.push('Informationen zum Baurecht / Planungsstand');
     if (!raw.area) missing.push('Grundstücks- oder Gebäudefläche');
     // Exact addresses or parcel identifiers are not collected by the short form.
     missing.push('Genaue Lage / Flurstück und verfügbare Unterlagen prüfen');
     summary = [raw.name + ' bietet ein Projekt an.', raw.city && 'Ort: ' + raw.city + '.',
-      raw.object_type && 'Objekt: ' + raw.object_type + '.', raw.area && 'Fläche laut Anfrage: ' + raw.area + '.'].filter(Boolean).join(' ');
+      raw.object_type && 'Objekt: ' + fieldValueLabel('object_type', raw.object_type) + '.', raw.area && 'Fläche laut Anfrage: ' + raw.area + '.'].filter(Boolean).join(' ');
     next = 'Projektangaben und Unterlagen sichten';
   } else if (kind === 'partner') {
-    title = [raw.trade || 'Baupartner', raw.company].filter(Boolean).join(' · ');
+    title = [fieldValueLabel('trade', raw.trade) || 'Baupartner', raw.company].filter(Boolean).join(' · ');
     if (!raw.reference_summary) missing.push('Passende Referenzprojekte');
     if (!raw.availability) missing.push('Verfügbare Kapazitäten');
     summary = [raw.company || raw.name, 'stellt sich als Baupartner vor.',
-      raw.trade && 'Fachgebiet: ' + raw.trade + '.', raw.service_region && 'Region: ' + raw.service_region + '.'].filter(Boolean).join(' ');
+      raw.trade && 'Fachgebiet: ' + fieldValueLabel('trade', raw.trade) + '.', raw.service_region && 'Region: ' + raw.service_region + '.'].filter(Boolean).join(' ');
     next = missing.length ? 'Referenzen und Kapazitäten klären' : 'Einsatzmöglichkeit prüfen';
   } else if (kind === 'cooperation') {
-    title = raw.cooperation_interest || 'Kooperationsanfrage';
+    title = fieldValueLabel('cooperation_interest', raw.cooperation_interest) || 'Kooperationsanfrage';
     if (!raw.message) missing.push('Vorhaben und gewünschter Beitrag von RBS');
     summary = raw.name + ' möchte eine Kooperation besprechen.' + (raw.company ? ' Unternehmen: ' + raw.company + '.' : '');
     next = 'Gesprächsanlass prüfen';
@@ -155,7 +156,7 @@ export async function listCases(db, cursor) {
   }
   const result = await db.pool.query('SELECT c.*, m.display_name AS owner_name FROM rbs_portal_cases c ' +
     'LEFT JOIN rbs_portal_members m ON m.id=c.owner_id ' + where + ' ORDER BY c.created_at DESC,c.id DESC LIMIT 101', values);
-  const items = result.rows.slice(0, 100);
+  const items = result.rows.slice(0, 100).map(presentCase);
   const last = items.at(-1);
   const next = result.rows.length > 100 ? Buffer.from(JSON.stringify([last.created_at, last.id])).toString('base64url') : null;
   return { items, next };
@@ -168,7 +169,15 @@ export async function getCase(db, id) {
   if (!item) throw new PortalError(404, 'Vorgang nicht gefunden.');
   const events = (await db.pool.query('SELECT e.id,e.action,e.detail,e.created_at,m.display_name AS actor_name ' +
     'FROM rbs_portal_events e LEFT JOIN rbs_portal_members m ON m.id=e.actor_id WHERE e.case_id=$1 ORDER BY e.created_at ASC LIMIT 500', [id])).rows;
-  return { item, events };
+  return { item: presentCase(item), events };
+}
+
+function presentCase(item) {
+  if (item.preparation_kind !== 'rules') return item;
+  // Render old enum-based records in German as well. Preserve source values,
+  // human-edited drafts, next steps, versions and all stored audit events.
+  const { title, summary } = prepareWithRules(item.original_data);
+  return { ...item, title, summary };
 }
 
 export async function mutateCase(db, id, member, input, prepared) {

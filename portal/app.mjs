@@ -1,6 +1,7 @@
 import { login, logout, getUser, getSettings, handleAuthCallback, acceptInvite,
   recoverPassword, requestPasswordRecovery, updateUser, onAuthChange } from '@netlify/identity';
 import { setPasswordAndLogin } from './auth-flow.mjs';
+import { fieldValueLabel } from './field-labels.mjs';
 
 const app = document.getElementById('app');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -220,7 +221,7 @@ function renderDetail() {
     (!state.ai ? ' Die Vorbereitung nutzt derzeit die übermittelten Formularangaben.' : '') + '</p></section></form>' +
     '<details class="section"><summary>Originalangaben ansehen</summary><dl class="source-grid">' +
     Object.entries(item.original_data).filter(([key, value]) => labels[key] && value).map(([key, value]) =>
-      '<dt>' + esc(labels[key]) + '</dt><dd>' + esc(value) + '</dd>').join('') + '</dl></details>' +
+      '<dt>' + esc(labels[key]) + '</dt><dd>' + esc(fieldValueLabel(key, value)) + '</dd>').join('') + '</dl></details>' +
     '<section class="section"><h3>Verlauf &amp; Notizen</h3><ul class="timeline">' + events.map(event =>
       '<li>' + esc(eventText(event)) + '<time>' + date(event.created_at) + (event.actor_name ? ' · ' + esc(event.actor_name) : '') + '</time></li>').join('') +
     '</ul><form class="note-form" id="note-form"><div class="field"><label for="note-text">Interne Notiz</label><textarea id="note-text" maxlength="3000" placeholder="Zum Beispiel: Besichtigung abgestimmt …"' + disabled + ' required></textarea></div>' +

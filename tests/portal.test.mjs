@@ -110,6 +110,20 @@ test('unknown fields, header injection and arbitrary project ids are rejected or
   const prepared = prepareWithRules(normalized);
   assert.ok(prepared.summary.includes('Testort')); assert.equal(prepared.preparation_kind, 'rules');
 });
+test('website option codes are readable without changing originals or edited drafts', async () => {
+  assert.equal(prepareWithRules({ ...input, object_type: 'land' }).title, 'Grundstück · Testort');
+  assert.equal(prepareWithRules({ ...input, request_kind: 'cooperation', cooperation_interest: 'project_discussion' }).title, 'Konkrete Projektidee');
+  const created = await createCase(db, { ...input, request_kind: 'partner', trade: 'shell', company: 'Synthetischer Betrieb' });
+  await pg.query("UPDATE rbs_portal_cases SET title='shell',summary='Fachgebiet: shell.',draft='Unveränderter manueller Entwurf',draft_state='edited' WHERE id=$1", [created.item.id]);
+  const { item } = await getCase(db, created.item.id);
+  assert.equal(item.title, 'Rohbau · Synthetischer Betrieb');
+  assert.ok(item.summary.includes('Fachgebiet: Rohbau.'));
+  assert.equal(item.original_data.trade, 'shell');
+  assert.equal(item.draft, 'Unveränderter manueller Entwurf');
+  const stored = (await pg.query('SELECT title FROM rbs_portal_cases WHERE id=$1', [item.id])).rows[0];
+  assert.equal(stored.title, 'shell');
+  assert.equal((await listCases(db)).items.find(row => row.id === item.id).title, item.title);
+});
 test('pagination validates its cursor and disabled or role-revoked users lose access', async () => {
   await assert.rejects(listCases(db, 'not-a-cursor'), { status: 400 });
   assert.ok((await listCases(db)).items.length >= 2);
