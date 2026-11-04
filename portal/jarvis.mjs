@@ -91,9 +91,9 @@ export function prepareInquiry(raw) {
     (raw.city ? ' Ort: ' + raw.city + '.' : '') + (raw.trade ? ' Fachgebiet: ' + fieldValueLabel('trade', raw.trade) + '.' : '') +
     (raw.object_type ? ' Objekt: ' + fieldValueLabel('object_type', raw.object_type) + '.' : '') +
     (raw.message ? ' Nachricht: ' + content(raw.message).slice(0, 350) : '');
-  let body = 'Vielen Dank für Ihre Anfrage' + (kind === 'project' && raw.city ? ' zu Ihrem Vorhaben in ' + raw.city : '') + '.';
+  let body = 'vielen Dank für Ihre Anfrage' + (kind === 'project' && raw.city ? ' zu Ihrem Vorhaben in ' + raw.city : '') + '.';
   if (a.availability_request) {
-    if (a.project) body += '\n\nWir prüfen die aktuellen Möglichkeiten für ' + a.project.name + ' und melden uns anschließend bei Ihnen.';
+    if (a.project) body += '\n\nWir prüfen die aktuellen Möglichkeiten für das Projekt „' + a.project.name + '“' + ' und melden uns anschließend bei Ihnen.';
     else body += '\n\nDamit wir Ihre Anfrage zuordnen können, benötigen wir noch den Projekt- oder Ortsbezug.';
   } else if (a.appointment) body += a.appointment_times ? '\n\nIhre Zeitvorschläge haben wir aufgenommen. Wir prüfen die Möglichkeiten und melden uns zur Terminabstimmung bei Ihnen.' :
     '\n\nGerne stimmen wir einen passenden Gesprächs- oder Besichtigungstermin mit Ihnen ab. Bitte nennen Sie uns ein oder zwei mögliche Zeitfenster.';
