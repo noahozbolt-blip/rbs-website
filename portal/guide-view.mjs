@@ -1,4 +1,4 @@
-import { normalizeGuide, guideNode, guidePlan } from './guide.mjs';
+import { normalizeGuide, guideNode, guidePlan, guideRecommendation } from './guide.mjs';
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const hints = { documents: 'Gezielt fehlende Informationen ergänzen', conversation: 'Ziel und Terminabstimmung vorbereiten', assess: 'Eine persönliche Entscheidung vorbereiten' };
 
@@ -7,15 +7,17 @@ export function renderGuide(item, saved, { owned, hidden = false } = {}) {
   const state = normalizeGuide(item.kind, saved);
   const node = guideNode(item.kind, state.path.at(-1));
   const plan = guidePlan({ ...item.original_data, request_kind: item.kind }, state, item.project_key);
+  const recommendation = guideRecommendation({ ...item.original_data, request_kind: item.kind }, item.project_key);
   const disabled = owned ? '' : ' disabled';
-  const button = (id, label, root = false) => '<button class="guide-choice" type="button" data-guide-op="choose" data-guide-target="' + esc(id) + '"' + disabled + '><strong>' + esc(label) + '</strong>' +
+  const button = (id, label, root = false) => '<button class="guide-choice' + (root && recommendation.id === id ? ' recommended' : '') + '" type="button" data-guide-op="choose" data-guide-target="' + esc(id) + '"' + disabled + '><strong>' + esc(label) + '</strong>' +
+    (root && recommendation.id === id ? '<span class="guide-recommended-label">Jarvis-Vorschlag</span>' : '') +
     (root && hints[id] ? '<span>' + esc(hints[id]) + '</span>' : '') + '</button>';
   return '<section id="jarvis-guide" class="guide-box" aria-label="Jarvis-Leitfaden"><div class="row"><div class="eyebrow">Jarvis-Leitfaden · optional</div><button class="text-button" type="button" data-action="guide-hide">Frei bearbeiten</button></div>' +
     (state.path.length > 1 ? '<div class="guide-trail">' + state.path.slice(-3).map(id => esc(guideNode(item.kind, id).label)).join(' <span>→</span> ') + '</div>' : '') +
     (plan ? '<div class="guide-plan"><h3>' + esc(plan.title) + '</h3><p>' + esc(plan.next_step) + '</p><details><summary>Worauf es ankommt und was daraus folgen kann</summary><ul>' + plan.checks.map(check => '<li>' + esc(check) + '</li>').join('') + '</ul>' +
       '<dl>' + plan.outcomes.map(([when, then]) => '<dt>' + esc(when) + '</dt><dd>' + esc(then) + '</dd>').join('') + '</dl></details><div class="toolbar"><button class="btn primary" type="button" data-action="guide-preview"' + disabled + '>Vorbereitung ansehen</button>' +
-      (plan.complete && item.status !== 'done' ? '<button class="btn" type="button" data-action="guide-complete"' + disabled + '>Als erledigt markieren</button>' : '') + '</div><p class="rule-label">Ein gemerkter Weg bestätigt keine ausgeführte Aktion. Vorschläge werden erst nach Ihrer Auswahl in die Bearbeitung übernommen.</p></div>' :
-      '<h3>' + esc(node.question) + '</h3><p class="guide-intro">Wählen Sie einen Einstieg. Jarvis zeigt danach passende Schritte und mögliche nächste Wege.</p>') +
+      (plan.complete && item.status !== 'done' ? '<button class="btn" type="button" data-action="guide-complete"' + disabled + '>Als erledigt markieren</button>' : '') + '</div><p class="rule-label">Die Wegwahl allein versendet nichts und bestätigt keine Ausführung.</p></div>' :
+      '<h3>' + esc(node.question) + '</h3><p class="guide-intro">' + esc(recommendation.reason) + ' Sie können jeden Weg wählen.</p>') +
     (node.options.length ? (plan ? '<p class="guide-question">' + esc(node.question) + '</p>' : '') + '<div class="guide-choices">' + node.options.map(option => button(option.id, option.label, node.id === 'start')).join('') + '</div>' : '') +
     (node.id === 'start' ? '<details class="guide-alternatives"><summary>Weitere Wege</summary><div class="guide-choices">' + button('wait', 'Später aufgreifen') + button('finish', 'Abschluss prüfen') + '</div></details>' :
       '<div class="guide-navigation"><button type="button" class="text-button" data-guide-op="back"' + disabled + '>← Einen Schritt zurück</button><button type="button" class="text-button" data-guide-op="reset"' + disabled + '>Anderen Weg beginnen</button></div>') +

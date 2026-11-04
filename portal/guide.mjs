@@ -36,6 +36,14 @@ export const guideNode = (kind, id) => {
 };
 export const initialGuide = kind => ({ schema: 1, kind: guideKind(kind), path: ['start'] });
 
+export function guideRecommendation(raw, projectKey = '') {
+  const a = analyzeInquiry(raw, projectKey);
+  if (a.availability_request) return { id: 'assess', reason: 'Aktuelle Verfügbarkeit zunächst intern prüfen.' };
+  if (a.questions.length) return { id: 'documents', reason: 'In der Anfrage sind noch Angaben offen.' };
+  if (a.appointment) return { id: 'conversation', reason: 'Die Anfrage enthält einen Gesprächs- oder Terminwunsch.' };
+  return { id: 'assess', reason: 'Die vorliegenden Angaben zunächst intern sichten.' };
+}
+
 export function normalizeGuide(kind, saved) {
   const k = guideKind(kind);
   if (saved?.schema !== 1 || saved.kind !== k || !Array.isArray(saved.path) || saved.path[0] !== 'start' || saved.path.length > 24) return initialGuide(k);

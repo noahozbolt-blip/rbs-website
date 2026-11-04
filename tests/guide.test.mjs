@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { initialGuide, guideNode, advanceGuide, normalizeGuide, guidePlan } from '../portal/guide.mjs';
+import { initialGuide, guideNode, advanceGuide, normalizeGuide, guidePlan, guideRecommendation } from '../portal/guide.mjs';
 import { renderGuide, renderGuidePreview } from '../portal/guide-view.mjs';
 
 const raw = { request_kind: 'project', name: 'Synthetischer Test', city: 'Limburg', area: '1.100 m²',
@@ -12,6 +12,12 @@ test('each request type starts with three relevant options', () => {
     assert.equal(guideNode(kind, 'start').options.length, 3);
   }
   assert.equal(guideNode('partner', 'start').options[0].label, 'Leistungen klären');
+});
+test('a contextual recommendation leaves all three routes available', () => {
+  assert.equal(guideRecommendation(raw).id, 'documents');
+  assert.equal(guideRecommendation({ request_kind: 'contact', message: 'Können wir einen Gesprächstermin am Donnerstag vereinbaren?' }).id, 'conversation');
+  assert.equal(guideRecommendation({ request_kind: 'contact', message: 'Ist im Projekt Nentershausen noch eine Wohnung frei?' }).id, 'assess');
+  assert.equal(guideNode('project', 'start').options.length, 3);
 });
 test('only the selected path is continued and changing it preserves prior state', () => {
   const start = initialGuide('project');
