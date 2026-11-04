@@ -1,12 +1,13 @@
 import { randomUUID, createHash } from 'node:crypto';
-import { fieldValueLabel } from '../portal/field-labels.mjs';
+import { prepareInquiry, analyzeInquiry } from '../portal/jarvis.mjs';
+import { PROJECT_OPTIONS } from '../portal/project-knowledge.mjs';
 
 export class PortalError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 export const KINDS = new Set(['project', 'partner', 'cooperation', 'contact']);
 export const STATUSES = new Set(['new', 'in_progress', 'waiting', 'done']);
-const PROJECTS = new Set(['', 'nentershausen', 'niedererbach']);
+const PROJECTS = new Set(Object.keys(PROJECT_OPTIONS));
 const FIELDS = ['name', 'email', 'phone', 'company', 'message', 'request_kind', 'request_id',
   'form-name', 'project_id', 'source', 'object_type', 'postal_code', 'city', 'representative_role',
   'area', 'planning_status', 'trade', 'service_region', 'availability', 'reference_summary',
@@ -27,45 +28,7 @@ export function normalizeInput(data) {
   return raw;
 }
 
-export function prepareWithRules(raw) {
-  const kind = raw.request_kind;
-  const missing = [];
-  let title, summary, next;
-  if (kind === 'project') {
-    title = [fieldValueLabel('object_type', raw.object_type) || 'Projektangebot', raw.city].filter(Boolean).join(' · ');
-    if (!raw.planning_status) missing.push('Informationen zum Baurecht / Planungsstand');
-    if (!raw.area) missing.push('Grundstücks- oder Gebäudefläche');
-    // Exact addresses or parcel identifiers are not collected by the short form.
-    missing.push('Genaue Lage / Flurstück und verfügbare Unterlagen prüfen');
-    summary = [raw.name + ' bietet ein Projekt an.', raw.city && 'Ort: ' + raw.city + '.',
-      raw.object_type && 'Objekt: ' + fieldValueLabel('object_type', raw.object_type) + '.', raw.area && 'Fläche laut Anfrage: ' + raw.area + '.'].filter(Boolean).join(' ');
-    next = 'Projektangaben und Unterlagen sichten';
-  } else if (kind === 'partner') {
-    title = [fieldValueLabel('trade', raw.trade) || 'Baupartner', raw.company].filter(Boolean).join(' · ');
-    if (!raw.reference_summary) missing.push('Passende Referenzprojekte');
-    if (!raw.availability) missing.push('Verfügbare Kapazitäten');
-    summary = [raw.company || raw.name, 'stellt sich als Baupartner vor.',
-      raw.trade && 'Fachgebiet: ' + fieldValueLabel('trade', raw.trade) + '.', raw.service_region && 'Region: ' + raw.service_region + '.'].filter(Boolean).join(' ');
-    next = missing.length ? 'Referenzen und Kapazitäten klären' : 'Einsatzmöglichkeit prüfen';
-  } else if (kind === 'cooperation') {
-    title = fieldValueLabel('cooperation_interest', raw.cooperation_interest) || 'Kooperationsanfrage';
-    if (!raw.message) missing.push('Vorhaben und gewünschter Beitrag von RBS');
-    summary = raw.name + ' möchte eine Kooperation besprechen.' + (raw.company ? ' Unternehmen: ' + raw.company + '.' : '');
-    next = 'Gesprächsanlass prüfen';
-  } else {
-    title = raw.subject || 'Neue Kontaktanfrage';
-    summary = raw.name + ' hat eine Kontaktanfrage gesendet.';
-    next = 'Anliegen prüfen und nächsten Schritt festlegen';
-  }
-  if (raw.message) summary += ' Nachricht: ' + raw.message.slice(0, 350);
-  const request = missing.length ? 'Für die weitere Prüfung helfen uns noch folgende Informationen:\n' +
-    missing.map(m => '• ' + m).join('\n') + '\n\nBitte senden Sie uns die Angaben, soweit diese bereits vorliegen.' :
-    'Wir sehen uns Ihre Angaben an und melden uns mit einem passenden nächsten Schritt.';
-  const draft = 'Guten Tag,\n\nvielen Dank für Ihre Anfrage' +
-    (raw.city ? ' zu Ihrem Vorhaben in ' + raw.city : '') + '.\n\n' + request +
-    '\n\nFreundliche Grüße\nRBS Projektentwicklung';
-  return { title, summary, missing, next_step: next, draft, preparation_kind: 'rules' };
-}
+export const prepareWithRules = raw => prepareInquiry(raw);
 
 export async function transaction(db, work) {
   const client = await db.pool.connect();
@@ -173,11 +136,14 @@ export async function getCase(db, id) {
 }
 
 function presentCase(item) {
-  if (item.preparation_kind !== 'rules') return item;
-  // Render old enum-based records in German as well. Preserve source values,
-  // human-edited drafts, next steps, versions and all stored audit events.
-  const { title, summary } = prepareWithRules(item.original_data);
-  return { ...item, title, summary };
+  const raw = { ...item.original_data, project_id: item.project_key || item.original_data.project_id };
+  const assistance = analyzeInquiry(raw);
+  if (item.preparation_kind !== 'rules') return { ...item, assistance };
+  const prepared = prepareWithRules(raw);
+  const pristine = item.version === 1 && !item.owner_id && item.draft_state === 'suggested';
+  // Existing human work is never regenerated merely by reading a case.
+  return { ...item, title: prepared.title, summary: prepared.summary, missing: prepared.missing, assistance,
+    ...(pristine ? { next_step: prepared.next_step, draft: prepared.draft } : {}) };
 }
 
 export async function mutateCase(db, id, member, input, prepared) {

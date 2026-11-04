@@ -2,18 +2,20 @@ import { login, logout, getUser, getSettings, handleAuthCallback, acceptInvite,
   recoverPassword, requestPasswordRecovery, updateUser, onAuthChange } from '@netlify/identity';
 import { setPasswordAndLogin } from './auth-flow.mjs';
 import { fieldValueLabel } from './field-labels.mjs';
+import { PROJECT_KNOWLEDGE, PROJECT_OPTIONS, KNOWLEDGE_DATE } from './project-knowledge.mjs';
+import { prepareInquiry, analyzeInquiry, isDue, selectCases } from './jarvis.mjs';
 
 const app = document.getElementById('app');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const kinds = { project: 'Projektangebot', partner: 'Baupartner', cooperation: 'Kooperation', contact: 'Kontakt' };
 const statuses = { new: 'Neu', in_progress: 'In Bearbeitung', waiting: 'Wartet', done: 'Erledigt' };
-const projects = { '': 'Ohne Projektbezug', nentershausen: 'Nentershausen', niedererbach: 'Niedererbach' };
+const projects = PROJECT_OPTIONS;
 const labels = { name: 'Ansprechpartner', email: 'E-Mail', phone: 'Telefon', company: 'Unternehmen', message: 'Nachricht',
   object_type: 'Objektart', postal_code: 'Postleitzahl', city: 'Ort', representative_role: 'Rolle', area: 'Fläche',
   planning_status: 'Planungsstand', trade: 'Fachgebiet', service_region: 'Einsatzregion', availability: 'Kapazitäten',
   reference_summary: 'Referenzen', cooperation_interest: 'Gesprächsanlass', subject: 'Betreff' };
 const state = { demo: new URLSearchParams(location.search).get('demo') === '1', member: null, items: [], current: null,
-  view: 'inbox', query: '', next: null, busy: false, dirty: false, ai: false };
+  view: 'inbox', filter: 'all', query: '', next: null, busy: false, dirty: false, ai: false };
 let installPrompt = null;
 const date = value => value ? new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '';
 const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
@@ -129,21 +131,22 @@ function renderShell() {
       '<span class="count" id="count-' + view + '">' + counts[view] + '</span></button>').join('') + '</nav>' +
     '<div class="sidebar-bottom"><button type="button" data-action="install">Auf dem Handy speichern</button><button type="button" data-action="logout">Abmelden</button>' +
     '<div class="sidebar-user"><strong>' + esc(state.member.display_name) + '</strong><span>' + esc(state.member.email) + '</span></div></div></aside><main class="main">' +
-    (state.demo ? '<div class="demo-banner"><span>Demo · erfundene Beispieldaten · Änderungen bleiben in dieser Ansicht</span><a href="/portal/">Zur Anmeldung</a></div>' : '') +
+    (state.demo ? '<div class="demo-banner"><span>Demo · erfundene Anfragen · öffentliche RBS-Projektquellen · Änderungen nur in dieser Ansicht</span><a href="/portal/">Zur Anmeldung</a></div>' : '') +
     '<header class="topbar"><div class="top-title"><img class="mobile-logo" src="/assets/icons/rbs-icon-192.png" alt=""><div><h1>Arbeitsbereich</h1><div class="topbar-sub" id="connection-status">' +
     (navigator.onLine ? 'RBS Projektentwicklung' : 'Offline · Speichern erfordert eine Verbindung') + '</div></div></div>' +
     '<div class="top-actions"><button type="button" class="btn quiet" data-action="settings">Konto</button><button type="button" class="btn primary" data-action="new">+ Neu</button></div></header>' +
-    '<div id="notice" class="notice" role="alert"></div><div id="workspace" class="workspace"><section class="inbox" aria-label="Anfrageeingang">' +
+    '<div id="notice" class="notice" role="alert"></div><div class="queue-bar"><div id="queue-filters" class="queue-filters" role="group" aria-label="Anfragen filtern"></div><button class="text-button" type="button" data-action="knowledge">Projektwissen</button></div><div id="workspace" class="workspace"><section class="inbox" aria-label="Anfrageeingang">' +
     '<label for="search" class="small muted">Anfragen durchsuchen</label><input id="search" class="inbox-search" type="search" placeholder="Name, Ort oder Unternehmen …" value="' + esc(state.query) + '">' +
     '<div class="row small muted"><span id="inbox-caption">Gemeinsamer Eingang</span><button class="text-button" type="button" data-action="refresh">Aktualisieren</button></div>' +
     '<div id="case-list" class="case-list"></div><div id="pagination"></div></section><section id="case-detail" class="case-detail" aria-label="Vorgang">' +
-    '<div class="empty"><img src="/assets/icons/rbs-icon-192.png" alt=""><h2>Alles für den nächsten Schritt.</h2><p>Öffnen Sie eine Anfrage. Originalangaben, Vorbereitung und Verlauf stehen zusammen bereit.</p></div></section></div></main></div>' +
+    '<div class="empty"><img src="/assets/icons/rbs-icon-192.png" alt=""><div class="eyebrow">Jarvis · RBS Arbeitsbereich</div><h2>Vom Eingang zum nächsten Schritt.</h2><p>Öffnen Sie eine Anfrage. Jarvis stellt Angaben, passende Projektquellen und einen Antwortentwurf zusammen. Sie übernehmen, prüfen und entscheiden.</p><button class="btn" type="button" data-action="knowledge">Hinterlegtes Projektwissen ansehen</button></div></section></div></main></div>' +
     '<dialog id="new-dialog"><div class="close-row"><h2>Anfrage aufnehmen</h2><button class="btn quiet" type="button" data-close="new-dialog" aria-label="Schließen">×</button></div>' +
     '<form id="new-form"><div class="field"><label for="new-kind">Anfrageart</label><select id="new-kind" name="request_kind">' + options(kinds, 'contact') + '</select></div>' +
     '<div class="field"><label for="new-name">Ansprechpartner</label><input id="new-name" name="name" maxlength="250" required></div>' +
     '<div class="field"><label for="new-email">E-Mail-Adresse</label><input id="new-email" name="email" type="email" maxlength="254"></div>' +
-    '<div class="field"><label for="new-company">Unternehmen / Ort</label><input id="new-company" name="company" maxlength="250"></div>' +
+    '<div class="field"><label for="new-company">Unternehmen (optional)</label><input id="new-company" name="company" maxlength="250"></div>' +
     '<div class="field"><label for="new-message">Anliegen</label><textarea id="new-message" name="message" maxlength="3000" required></textarea></div>' +
+    '<details class="manual-context"><summary>Projekt und Ort ergänzen (optional)</summary><div class="field"><label for="new-project">Projektbezug</label><select id="new-project" name="project_id">' + options(projects, '') + '</select></div><div class="field"><label for="new-city">Ort / Einsatzregion</label><input id="new-city" name="city" maxlength="250"></div></details>' +
     '<div id="new-message-result" class="dialog-message" role="alert"></div><button class="btn primary full" type="submit">Anfrage speichern</button></form></dialog>' +
     '<dialog id="settings-dialog"><div class="close-row"><h2>Ihr Konto</h2><button class="btn quiet" type="button" data-close="settings-dialog" aria-label="Schließen">×</button></div>' +
     '<form id="profile-form"><div class="field"><label for="profile-name">Anzeigename</label><input id="profile-name" maxlength="100" value="' + esc(state.member.display_name) + '" required></div>' +
@@ -158,39 +161,51 @@ function renderShell() {
     '<div class="install-help"><strong>Android</strong><br>Im Browsermenü „App installieren“ oder „Zum Startbildschirm hinzufügen“ wählen.</div>' +
     '<p class="small muted">Der Zugriff auf Geschäftsdaten und das Speichern benötigen eine Internetverbindung.</p><button id="native-install" class="btn primary full" type="button"' +
     (installPrompt ? '' : ' hidden') + '>App installieren</button></dialog>';
+  app.insertAdjacentHTML('beforeend', '<dialog id="knowledge-dialog"><div class="close-row"><h2>Projektwissen</h2><button class="btn quiet" type="button" data-close="knowledge-dialog" aria-label="Schließen">×</button></div><p class="muted small">Aus den veröffentlichten RBS-Projektseiten · Quellen geprüft am ' + date(KNOWLEDGE_DATE) + '. Bau- und Vermarktungsstände sind Websiteangaben.</p>' +
+    PROJECT_KNOWLEDGE.map(project => '<article class="knowledge-card"><h3>' + esc(project.name) + '</h3><ul>' + project.facts.map(fact => '<li>' + esc(fact) + '</li>').join('') + '</ul><p class="small muted">' + esc(project.note) + '</p><a href="' + esc(project.source) + '" target="_blank" rel="noopener">Projektquelle öffnen ↗</a>' + (project.model ? '<a href="' + esc(project.model) + '" target="_blank" rel="noopener">3D-Modell ↗</a>' : '') + '</article>').join('') +
+    '<p class="small muted">Neue Projektarten und Regionen bleiben willkommen. Die Quellen dienen der Einordnung; über die Anfrage entscheidet RBS.</p></dialog>');
   bindShell();
   renderList();
 }
 
 function filteredCases() {
-  const q = state.query.toLocaleLowerCase('de');
-  return state.items.filter(item => {
-    const inView = state.view === 'done' ? item.status === 'done' : item.status !== 'done' &&
-      (state.view !== 'mine' || item.owner_id === state.member.id);
-    return inView && (!q || [item.title, item.contact_name, item.company, item.location, item.email].join(' ').toLocaleLowerCase('de').includes(q));
-  });
+  return selectCases(state.items, { view: state.view, filter: state.filter, memberId: state.member.id, query: state.query, today: today() });
 }
 function renderList() {
   const container = document.getElementById('case-list');
   if (!container) return;
   const items = filteredCases();
-  container.innerHTML = items.map(item => '<button type="button" class="case-card' +
+  const inView = selectCases(state.items, { view: state.view, memberId: state.member.id, today: today() });
+  document.getElementById('queue-filters').innerHTML = [
+    ['all', state.view === 'done' ? 'Erledigt' : 'Alle', inView.length],
+    ...(state.view !== 'done' ? [['unclaimed', 'Offen zur Übernahme', inView.filter(item => !item.owner_id).length], ['due', 'Heute / überfällig', inView.filter(item => isDue(item, today())).length]] : [])
+  ].map(([filter, label, count]) => '<button type="button" data-filter="' + filter + '" aria-pressed="' + (state.filter === filter) + '">' + label + '<span>' + count + '</span></button>').join('');
+  container.innerHTML = items.map(item => '<button type="button" class="case-card' + (isDue(item, today()) ? ' is-due' : '') +
     (state.current?.item.id === item.id ? ' active' : '') + '" data-case="' + esc(item.id) + '">' +
     '<div class="row"><span class="case-kind">' + esc(kinds[item.kind]) + '</span><span class="tag ' + esc(item.status) + '">' +
     esc(statuses[item.status]) + '</span></div><h3>' + esc(item.title) + '</h3><p>' + esc(item.contact_name) +
     (item.location ? ' · ' + esc(item.location) : '') + '</p><div class="row"><span class="case-owner">' +
     esc(item.owner_id ? item.owner_name || state.member.display_name : 'Noch nicht übernommen') + '</span><span class="case-kind">' +
-    (item.due_on && item.status !== 'done' ? (item.due_on.slice(0, 10) < today() ? 'Fällig · ' : 'Wiedervorlage · ') + date(item.due_on) : date(item.created_at)) + '</span></div></button>').join('') ||
+    (item.due_on && item.status !== 'done' ? (item.due_on.slice(0, 10) <= today() ? 'Fällig · ' : 'Wiedervorlage · ') + date(item.due_on) : date(item.created_at)) + '</span></div></button>').join('') ||
     '<div class="empty"><h2>' + (state.query ? 'Keine Treffer' : 'Hier ist alles übersichtlich.') + '</h2><p>' +
-    (state.query ? 'Versuchen Sie einen anderen Suchbegriff.' : 'Neue Websiteanfragen erscheinen automatisch. Anfragen aus E-Mails oder Gesprächen können Sie über „Neu“ aufnehmen.') + '</p></div>';
+    (state.query ? 'Versuchen Sie einen anderen Suchbegriff.' : state.filter === 'due' ? 'Keine fällige Wiedervorlage in dieser Ansicht.' : state.filter === 'unclaimed' ? 'Alle geladenen Vorgänge wurden bereits übernommen.' : 'Neue Websiteanfragen erscheinen automatisch. Anfragen aus E-Mails oder Gesprächen können Sie über „Neu“ aufnehmen.') + '</p></div>';
   const counts = navCounts();
   for (const key of Object.keys(counts)) document.getElementById('count-' + key).textContent = counts[key];
   app.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === state.view));
   document.getElementById('pagination').innerHTML = state.next ? '<button class="btn full" type="button" data-action="more">Weitere Anfragen laden</button><p class="pending-count">Suche und Zähler beziehen sich auf die geladenen Anfragen.</p>' : '';
 }
+function renderAssistance(assistance, item, owned) {
+  const project = assistance.project;
+  return (assistance.cautions.length ? '<aside class="review-hints" aria-label="Hinweise zur Prüfung"><strong>Vor der Antwort prüfen</strong><ul>' + assistance.cautions.map(text => '<li>' + esc(text) + '</li>').join('') + '</ul></aside>' : '') +
+    (project ? '<section class="project-context" aria-label="Projektkontext"><div class="row"><div><div class="eyebrow">' + esc(assistance.project_origin) + '</div><h3>' + esc(project.name) + '</h3></div>' +
+      (owned && !item.project_key ? '<button type="button" class="btn" data-action="adopt-project">Zuordnung übernehmen</button>' : '') + '</div><p>' + esc(project.facts.slice(0, 2).join(' · ')) + '</p>' +
+      '<details><summary>Quelle und Einordnung</summary><p class="small muted">' + esc(project.note) + '</p><a href="' + esc(project.source) + '" target="_blank" rel="noopener">RBS-Projektseite öffnen ↗</a></details></section>' : '') +
+    (assistance.provided.length ? '<details class="provided-facts"><summary>Bereits enthaltene Angaben</summary><ul>' + assistance.provided.map(text => '<li>' + esc(text) + '</li>').join('') + '</ul></details>' : '');
+}
 function renderDetail() {
   if (!state.current) return;
   const { item, events } = state.current;
+  const assistance = analyzeInquiry({ ...item.original_data, project_id: item.project_key || item.original_data.project_id });
   const owned = item.owner_id === state.member.id;
   const disabled = owned ? '' : ' disabled';
   document.getElementById('workspace').classList.add('detail-open');
@@ -200,9 +215,9 @@ function renderDetail() {
     esc(statuses[item.status]) + '</span></div><h2>' + esc(item.title) + '</h2><div class="contact-row"><span>' + esc(item.contact_name) + '</span>' +
     (item.email ? '<a href="mailto:' + esc(item.email) + '">' + esc(item.email) + '</a>' : '') +
     (item.phone ? '<span>' + esc(item.phone) + '</span>' : '') + '</div></div>' +
-    '<div class="brief"><div class="eyebrow">' + (item.preparation_kind === 'ai' ? 'Jarvis · KI-Vorbereitung' : 'Aus den Anfrageangaben vorbereitet') +
+    '<div class="brief"><div class="row"><div class="eyebrow">' + (item.preparation_kind === 'ai' ? 'Jarvis · KI-Vorbereitung' : 'Jarvis · Vorbereitung') + '</div><span class="small muted">Anfrageangaben &amp; Projektquellen</span></div><div class="intent-tags">' + assistance.signals.map(signal => '<span class="tag">' + esc(signal) + '</span>').join('') +
     '</div><p>' + esc(item.summary) + '</p>' + (item.missing?.length ? '<ul class="missing-list">' + item.missing.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '') +
-    '</div><div class="owner-line"><p>Verantwortlich<br><strong>' + esc(item.owner_id ? item.owner_name || state.member.display_name : 'Noch offen') + '</strong></p>' +
+    '</div>' + renderAssistance(assistance, item, owned) + '<div class="owner-line"><p>Verantwortlich<br><strong>' + esc(item.owner_id ? item.owner_name || state.member.display_name : 'Noch offen') + '</strong></p>' +
     (!item.owner_id ? '<button class="btn primary" type="button" data-action="claim">Anfrage übernehmen</button>' :
       '<label class="small">Status <select class="status-select" id="status-select"' + disabled + '>' +
       options({ in_progress: 'In Bearbeitung', waiting: 'Wartet auf Rückmeldung', done: 'Erledigt' }, item.status) + '</select></label>') + '</div>' +
@@ -214,11 +229,11 @@ function renderDetail() {
     '</span></div><div class="field"><label for="draft-text" class="muted">Vor dem Versand prüfen</label><textarea id="draft-text" class="draft-area" maxlength="6000"' + disabled + '>' +
     esc(item.draft) + '</textarea></div><div class="toolbar"><button type="submit" class="btn primary"' + disabled + '>Änderungen speichern</button>' +
     '<button type="button" class="btn" data-action="review"' + disabled + '>Als geprüft markieren</button>' +
-    '<button type="button" class="btn quiet" data-action="prepare"' + (!owned || !state.ai || item.draft_state !== 'suggested' ? ' disabled' : '') + '>Jarvis vertiefen</button></div>' +
+    (state.ai ? '<button type="button" class="btn quiet" data-action="prepare"' + (!owned || item.draft_state !== 'suggested' ? ' disabled' : '') + '>KI vertiefen</button>' : '') + '</div>' +
     '<div class="toolbar"><button class="text-button" type="button" data-action="copy"' + disabled + '>Entwurf kopieren</button>' +
     '<button class="text-button" type="button" data-action="mail"' + (!owned || !item.email ? ' disabled' : '') + '>Im Mailprogramm öffnen</button></div>' +
     '<p class="rule-label">Der Versand erfolgt in Ihrem Mailprogramm. Das Portal verschickt keine Antworten selbstständig.' +
-    (!state.ai ? ' Die Vorbereitung nutzt derzeit die übermittelten Formularangaben.' : '') + '</p></section></form>' +
+    (!state.ai ? ' Die Vorbereitung nutzt Anfrageangaben und hinterlegte Projektquellen.' : '') + '</p></section></form>' +
     '<details class="section"><summary>Originalangaben ansehen</summary><dl class="source-grid">' +
     Object.entries(item.original_data).filter(([key, value]) => labels[key] && value).map(([key, value]) =>
       '<dt>' + esc(labels[key]) + '</dt><dd>' + esc(fieldValueLabel(key, value)) + '</dd>').join('') + '</dl></details>' +
@@ -301,7 +316,14 @@ function bindShell() {
     const view = event.target.closest('[data-view]');
     if (view) {
       state.view = view.dataset.view;
+      state.filter = 'all';
       app.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === state.view));
+      if (matchMedia('(max-width:760px)').matches) document.getElementById('workspace').classList.remove('detail-open');
+      renderList(); return;
+    }
+    const filter = event.target.closest('[data-filter]');
+    if (filter) {
+      state.filter = filter.dataset.filter;
       if (matchMedia('(max-width:760px)').matches) document.getElementById('workspace').classList.remove('detail-open');
       renderList(); return;
     }
@@ -314,6 +336,16 @@ function bindShell() {
       if (action === 'back') document.getElementById('workspace').classList.remove('detail-open');
       if (action === 'new') document.getElementById('new-dialog').showModal();
       if (action === 'settings') document.getElementById('settings-dialog').showModal();
+      if (action === 'knowledge') document.getElementById('knowledge-dialog').showModal();
+      if (action === 'adopt-project') {
+        if (state.current.item.owner_id !== state.member.id) throw new Error('Bitte den Vorgang zuerst übernehmen.');
+        const a = analyzeInquiry(state.current.item.original_data);
+        if (a.project) {
+          document.getElementById('project-key').value = a.project.key;
+          state.dirty = true;
+          message('Projektzuordnung übernommen. Bitte zusammen mit Ihren Änderungen speichern.');
+        }
+      }
       if (action === 'install') {
         document.getElementById('settings-dialog').close();
         document.getElementById('install-dialog').showModal();
@@ -355,7 +387,7 @@ function bindShell() {
       else item = (await post('cases', data, { 'Idempotency-Key': event.target.dataset.requestKey || (event.target.dataset.requestKey = crypto.randomUUID()) })).item;
       document.getElementById('new-dialog').close();
       event.target.reset(); delete event.target.dataset.requestKey;
-      state.view = 'inbox'; await loadCases(); await openCase(item.id);
+      state.view = 'inbox'; state.filter = 'all'; await loadCases(); await openCase(item.id);
       message('Anfrage aufgenommen und vorbereitet.', 'success');
     } catch (error) {
       document.getElementById('new-message-result').textContent = error.message;
@@ -393,18 +425,16 @@ const demoEvents = {};
 function demoCase(raw, id, overrides = {}) {
   const kind = raw.request_kind || 'contact';
   const item = { id, kind, contact_name: raw.name, email: raw.email || '', phone: '', company: raw.company || '', location: raw.city || '',
-    title: kind === 'project' ? 'Grundstücksangebot · ' + (raw.city || 'Region') : kind === 'partner' ? 'Baupartner · ' + (raw.company || raw.name) : 'Kooperationsanfrage',
-    original_data: raw, summary: raw.message || 'Neue Geschäftsanfrage.', missing: ['Passende Unterlagen und Details gemeinsam prüfen'],
-    next_step: 'Anfrage sichten und Rückfragen vorbereiten', draft: 'Guten Tag,\n\nvielen Dank für Ihre Anfrage. Für eine erste Einschätzung senden Sie uns bitte die vorhandenen Unterlagen und eine kurze Konkretisierung Ihres Vorhabens.\n\nFreundliche Grüße\nRBS Projektentwicklung',
-    draft_state: 'suggested', preparation_kind: 'rules', status: 'new', owner_id: null, project_key: '', due_on: null,
+    original_data: raw, ...prepareInquiry(raw),
+    draft_state: 'suggested', status: 'new', owner_id: null, project_key: raw.project_id || '', due_on: null,
     version: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...overrides };
   demoEvents[id] = [{ action: 'created', detail: { source: 'website' }, created_at: item.created_at }];
   return item;
 }
 function demoMutation(action, fields) {
   const item = state.current.item;
-  if (action === 'claim') { item.owner_id = state.member.id; item.owner_name = state.member.display_name; item.status = 'in_progress'; }
-  if (action === 'save') { Object.assign(item, fields); item.draft_state = 'edited'; }
+  if (action === 'claim') { item.owner_id = state.member.id; item.owner_name = state.member.display_name; if (item.status === 'new') item.status = 'in_progress'; }
+  if (action === 'save') { if (item.draft !== fields.draft) item.draft_state = 'edited'; Object.assign(item, fields); }
   if (action === 'status') item.status = fields.status;
   if (action === 'review') item.draft_state = 'reviewed';
   demoEvents[item.id].push({ action: action === 'claim' ? 'claimed' : action === 'save' ? 'saved' : action === 'review' ? 'reviewed' : action,
@@ -413,16 +443,23 @@ function demoMutation(action, fields) {
 }
 function startDemo() {
   state.member = { id: 'demo-member', display_name: 'RBS Geschäftsführung', email: 'pilot@example.invalid' };
+  const yesterday = new Date(today() + 'T12:00:00Z'); yesterday.setUTCDate(yesterday.getUTCDate() - 1);
   state.items = [
+    demoCase({ request_kind: 'contact', name: 'Beispiel-Interessentin', email: 'interessentin@example.invalid', subject: 'Wohnung in Nentershausen',
+      message: 'Wir interessieren uns für Ihr Mehrfamilienhaus in Nentershausen. Ist dort noch eine Wohnung verfügbar? Gerne würden wir einen Besichtigungstermin abstimmen.' }, 'demo-availability'),
     demoCase({ request_kind: 'project', name: 'Beispiel-Eigentümer', email: 'eigentuemer@example.invalid', city: 'Region Limburg',
-      object_type: 'Grundstück', area: '1.100 m²', message: 'Wir möchten ein Grundstück zur Entwicklung anbieten. Die Fläche beträgt ungefähr 1.100 m². Informationen zum Baurecht können wir nachreichen.' }, 'demo-project'),
+      object_type: 'land', area: '1.100 m²', message: 'Wir möchten ein Grundstück zur Entwicklung anbieten. Die Fläche beträgt ungefähr 1.100 m². Das Baurecht ist noch unbekannt.' }, 'demo-project'),
     demoCase({ request_kind: 'partner', name: 'Beispiel-Ansprechpartner', company: 'Musterbau GmbH', email: 'baupartner@example.invalid',
-      trade: 'Rohbau', service_region: 'Westerwald und Umgebung', message: 'Wir sind ein Rohbauunternehmen und interessieren uns für eine Zusammenarbeit. Referenzen stellen wir auf Anfrage gerne bereit.' }, 'demo-partner'),
+      trade: 'shell', service_region: 'Westerwald und Umgebung', availability: 'one_to_three_months', message: 'Wir sind ein Rohbauunternehmen aus dem Westerwald und haben ab Januar freie Kapazitäten. Wir interessieren uns für eine Zusammenarbeit.' }, 'demo-partner'),
     demoCase({ request_kind: 'cooperation', name: 'Beispiel-Projektpartner', email: 'partner@example.invalid',
-      message: 'Wir möchten eine mögliche gemeinsame Projektentwicklung besprechen und zunächst den Rahmen klären.' }, 'demo-cooperation',
-      { owner_id: 'demo-member', owner_name: 'RBS Geschäftsführung', status: 'waiting', next_step: 'Auf Konkretisierung der Projektidee warten' })
+      project_id: 'flacht', message: 'Wir möchten eine mögliche Zusammenarbeit beim Projekt Flacht besprechen und zunächst den Rahmen klären.' }, 'demo-cooperation'),
+    demoCase({ request_kind: 'contact', name: 'Beispiel-Kontakt', email: 'kontakt@example.invalid', project_id: 'niedererbach',
+      subject: 'Rückruf zum Wohnprojekt Niedererbach', message: 'Können wir am Donnerstag um 14.00 Uhr die Unterlagen zum Wohnprojekt Niedererbach besprechen?' }, 'demo-followup',
+      { owner_id: 'demo-member', owner_name: 'RBS Geschäftsführung', status: 'waiting', due_on: yesterday.toISOString().slice(0, 10), next_step: 'Rückruf und vorliegende Unterlagen abstimmen' }),
+    demoCase({ request_kind: 'project', name: 'Beispiel-Projektanbieter', email: 'projekt@example.invalid', city: 'Frankfurt', object_type: 'development_project',
+      message: 'Wir möchten ein Hochhausprojekt mit 80 Wohneinheiten in Frankfurt vorstellen. Ein Lageplan und Angaben zum Bebauungsplan liegen vor.' }, 'demo-new-field')
   ];
-  renderShell(); openCase('demo-project');
+  renderShell(); openCase('demo-availability');
 }
 async function beginApp() {
   const me = await api('me');

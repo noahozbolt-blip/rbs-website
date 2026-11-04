@@ -124,6 +124,22 @@ test('website option codes are readable without changing originals or edited dra
   assert.equal(stored.title, 'shell');
   assert.equal((await listCases(db)).items.find(row => row.id === item.id).title, item.title);
 });
+test('project suggestions remain separate from manual assignment and preserved work', async () => {
+  const created = await createCase(db, { request_kind: 'contact', name: 'Synthetischer Interessent',
+    message: 'Ist in Ihrem Mehrfamilienhaus in Nentershausen noch eine Wohnung frei?' });
+  const firstRead = (await getCase(db, created.item.id)).item;
+  assert.equal(firstRead.project_key, '');
+  assert.equal(firstRead.assistance.project.key, 'nentershausen');
+  let assigned = await mutateCase(db, firstRead.id, member, { action: 'claim', version: firstRead.version });
+  assigned = await mutateCase(db, assigned.id, member, { action: 'save', version: assigned.version,
+    draft: 'Persönlich bearbeitet. Keine Zusage.', next_step: 'Persönliche Rücksprache', due_on: '', project_key: 'flacht' });
+  const reread = (await getCase(db, assigned.id)).item;
+  assert.equal(reread.project_key, 'flacht');
+  assert.equal(reread.assistance.project.key, 'flacht');
+  assert.equal(reread.draft, 'Persönlich bearbeitet. Keine Zusage.');
+  assert.equal(reread.next_step, 'Persönliche Rücksprache');
+  assert.equal(reread.original_data.message, created.item.original_data.message);
+});
 test('pagination validates its cursor and disabled or role-revoked users lose access', async () => {
   await assert.rejects(listCases(db, 'not-a-cursor'), { status: 400 });
   assert.ok((await listCases(db)).items.length >= 2);
