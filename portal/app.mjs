@@ -1,6 +1,6 @@
 import { login, logout, getUser, getSettings, handleAuthCallback, acceptInvite,
-  recoverPassword, requestPasswordRecovery, updateUser, onAuthChange } from '@netlify/identity';
-import { setPasswordAndLogin } from './auth-flow.mjs';
+  recoverPassword, requestPasswordRecovery, updateUser, onAuthChange, refreshSession } from '@netlify/identity';
+import { setPasswordAndLogin, resumePortalSession, requestWithSession } from './auth-flow.mjs';
 import { fieldValueLabel } from './field-labels.mjs';
 import { PROJECT_KNOWLEDGE, PROJECT_OPTIONS, KNOWLEDGE_DATE } from './project-knowledge.mjs';
 import { prepareInquiry, analyzeInquiry, isDue, selectCases } from './jarvis.mjs';
@@ -25,8 +25,8 @@ function message(text, type = '') {
   if (target) { target.textContent = text; target.className = 'notice ' + type; }
 }
 async function api(path, options = {}) {
-  const response = await fetch('/api/portal/' + path, { credentials: 'same-origin', cache: 'no-store',
-    ...options, headers: { 'Content-Type': 'application/json', ...options.headers } });
+  const response = await requestWithSession(() => fetch('/api/portal/' + path, { credentials: 'same-origin', cache: 'no-store',
+    ...options, headers: { 'Content-Type': 'application/json', ...options.headers } }), refreshSession);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const error = new Error(data.error || 'Der Vorgang konnte nicht geladen werden.');
@@ -483,7 +483,7 @@ async function boot() {
   try {
     await getSettings();
     await handleAuthCallback();
-    const user = await getUser();
+    const user = await resumePortalSession({ refreshSession, getUser });
     if (user) await openAuthenticatedWorkspace();
     else renderAuth();
   } catch (error) {

@@ -24,6 +24,9 @@ revoked role, mismatched identity or failed lookup never grants access.
 Invitation and password recovery finish with an explicit SDK login so the
 browser session and protected API cookie agree. Workspace failures are shown
 separately from password setup; consumed invitation tokens are not retried.
+On resumption the browser awaits session renewal before opening the API. A 401
+may be retried once after successful renewal, before any portal mutation;
+authorization denials, conflicts and service errors are never retried.
 
 ## Data and actions
 

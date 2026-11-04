@@ -1,11 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { completePortalIdentity } from '../server/portal-auth.mjs';
-import { setPasswordAndLogin } from '../portal/auth-flow.mjs';
+import { setPasswordAndLogin, resumePortalSession, requestWithSession } from '../portal/auth-flow.mjs';
 
 const claims = { id: 'verified-identity', email: 'pilot@example.invalid', roles: ['rbs-pilot'] };
 const profile = { ...claims, confirmedAt: '2026-11-03T10:00:00Z' };
 const unexpectedLookup = () => { throw new Error('Unexpected privileged lookup'); };
+
+test('a resumed session finishes renewal before opening the workspace', async () => {
+  let renewed = false;
+  assert.equal(await resumePortalSession({ refreshSession: async () => { renewed = true; },
+    getUser: async () => { assert.ok(renewed); return profile; } }), profile);
+});
+test('an expired API session is renewed and retried exactly once', async () => {
+  let calls = 0, renewals = 0;
+  const response = await requestWithSession(async () => ({ status: ++calls === 1 ? 401 : 200 }), async () => { renewals++; return 'synthetic-new-session'; });
+  assert.equal(response.status, 200); assert.equal(calls, 2); assert.equal(renewals, 1);
+});
+test('failed renewal, authorization denials and server errors do not repeat writes', async () => {
+  for (const status of [401, 403, 409, 503]) {
+    let calls = 0;
+    const response = await requestWithSession(async () => { calls++; return { status }; }, async () => null);
+    assert.equal(response.status, status); assert.equal(calls, 1);
+  }
+});
 
 test('unauthenticated or unapproved identities cannot trigger a privileged lookup', async () => {
   assert.equal(await completePortalIdentity(null, unexpectedLookup), null);
