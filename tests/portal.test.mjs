@@ -140,6 +140,44 @@ test('project suggestions remain separate from manual assignment and preserved w
   assert.equal(reread.next_step, 'Persönliche Rücksprache');
   assert.equal(reread.original_data.message, created.item.original_data.message);
 });
+test('the selected guide route survives reload without changing drafts, status or next steps', async () => {
+  const created = await createCase(db, { ...input, request_id: 'guide-test' });
+  let item = await mutateCase(db, created.item.id, member, { action: 'claim', version: created.item.version });
+  item = await mutateCase(db, item.id, member, { action: 'save', version: item.version,
+    draft: 'Persönlicher Entwurf bleibt erhalten.', next_step: 'Persönlicher nächster Schritt', due_on: '', project_key: '' });
+  const previous = { ...item };
+  item = await mutateCase(db, item.id, member, { action: 'guide', operation: 'choose', target: 'documents', version: item.version });
+  let read = await getCase(db, item.id);
+  assert.deepEqual(read.guide.path, ['start', 'documents']);
+  assert.equal(read.item.draft, previous.draft); assert.equal(read.item.next_step, previous.next_step);
+  assert.equal(read.item.status, previous.status); assert.equal(read.item.draft_state, previous.draft_state);
+  assert.ok(read.events.some(event => event.action === 'guide' && event.detail.label === 'Angaben klären'));
+  item = await mutateCase(db, item.id, member, { action: 'guide', operation: 'choose', target: 'assess', version: item.version });
+  item = await mutateCase(db, item.id, member, { action: 'guide', operation: 'back', version: item.version });
+  read = await getCase(db, item.id);
+  assert.deepEqual(read.guide.path, ['start', 'documents']);
+  assert.equal(read.item.draft, previous.draft);
+});
+test('guide changes require ownership, a current version and a valid transition', async () => {
+  const created = await createCase(db, { ...input, request_id: 'guide-authorization-test' });
+  await assert.rejects(mutateCase(db, created.item.id, member, { action: 'guide', operation: 'choose', target: 'documents', version: 1 }), { status: 403 });
+  let item = await mutateCase(db, created.item.id, member, { action: 'claim', version: 1 });
+  await assert.rejects(mutateCase(db, item.id, second, { action: 'guide', operation: 'choose', target: 'documents', version: item.version }), { status: 403 });
+  await assert.rejects(mutateCase(db, item.id, member, { action: 'guide', operation: 'choose', target: 'documents', version: 1 }), { status: 409 });
+  await assert.rejects(mutateCase(db, item.id, member, { action: 'guide', operation: 'choose', target: 'finish_decline', version: item.version }), { status: 400 });
+  assert.deepEqual((await getCase(db, item.id)).guide.path, ['start']);
+  assert.equal((await getCase(db, item.id)).item.version, item.version);
+});
+test('manual work remains possible while a guide route is active', async () => {
+  const created = await createCase(db, { ...input, request_id: 'guide-manual-test' });
+  let item = await mutateCase(db, created.item.id, member, { action: 'claim', version: 1 });
+  item = await mutateCase(db, item.id, member, { action: 'guide', operation: 'choose', target: 'wait', version: item.version });
+  item = await mutateCase(db, item.id, member, { action: 'save', version: item.version, draft: 'Eigener Weg', next_step: 'Eigene Entscheidung', due_on: '2026-12-01', project_key: '' });
+  item = await mutateCase(db, item.id, member, { action: 'status', status: 'done', version: item.version });
+  const read = await getCase(db, item.id);
+  assert.deepEqual(read.guide.path, ['start', 'wait']);
+  assert.equal(read.item.draft, 'Eigener Weg'); assert.equal(read.item.status, 'done');
+});
 test('pagination validates its cursor and disabled or role-revoked users lose access', async () => {
   await assert.rejects(listCases(db, 'not-a-cursor'), { status: 400 });
   assert.ok((await listCases(db)).items.length >= 2);

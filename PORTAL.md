@@ -50,6 +50,25 @@ live availability, prices or binding completion dates. These public profiles
 are bundled into the app. Future private customer documents must use protected
 storage, not this public source repository or browser bundle.
 
+## Optional decision guide
+
+The guide starts with three choices appropriate to the inquiry type, then
+reveals only the chosen step, its possible consequences and the next choices.
+Documents, conversation, internal assessment, follow-up, waiting and closure
+have distinct preparation. Closure and refusal are separate explicit branches.
+
+Route choices are saved as versioned audit events by the owner of a case.
+They do not modify the draft, next step or status, and do not assert that an
+email was sent or a meeting happened. On reload the latest route is restored
+independently of the displayed audit history. Choices require the current case
+version and a valid transition in the server-side graph.
+
+Operators can hide the guide and continue freely. A preview offers copying
+only the next step or explicitly replacing the draft as well. Suggestions enter
+the existing editor and still require normal saving. Unsaved edits survive
+route navigation. A separate explicit action can mark an internally completed
+case done. The guide uses the same graph and preparation in the public demo.
+
 The preparation currently follows explicit rules; it is not a general-purpose
 language model. The external AI feature is
 disabled until separate approval of the inquiry-text payload and OpenAI
