@@ -4,6 +4,8 @@ import { setPasswordAndLogin, resumePortalSession, requestWithSession } from './
 import { fieldValueLabel } from './field-labels.mjs';
 import { PROJECT_KNOWLEDGE, PROJECT_OPTIONS, KNOWLEDGE_DATE } from './project-knowledge.mjs';
 import { prepareInquiry, analyzeInquiry, isDue, selectCases } from './jarvis.mjs';
+import { initialGuide, advanceGuide, guidePlan, guideNode } from './guide.mjs';
+import { renderGuide, renderGuidePreview } from './guide-view.mjs';
 
 const app = document.getElementById('app');
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -17,6 +19,8 @@ const labels = { name: 'Ansprechpartner', email: 'E-Mail', phone: 'Telefon', com
 const state = { demo: new URLSearchParams(location.search).get('demo') === '1', member: null, items: [], current: null,
   view: 'inbox', filter: 'all', query: '', next: null, busy: false, dirty: false, ai: false };
 let installPrompt = null;
+const hiddenGuides = new Set();
+let guidePreview = null;
 const date = value => value ? new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value)) : '';
 const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin' }).format(new Date());
 
@@ -164,6 +168,7 @@ function renderShell() {
   app.insertAdjacentHTML('beforeend', '<dialog id="knowledge-dialog"><div class="close-row"><h2>Projektwissen</h2><button class="btn quiet" type="button" data-close="knowledge-dialog" aria-label="Schließen">×</button></div><p class="muted small">Aus den veröffentlichten RBS-Projektseiten · Quellen geprüft am ' + date(KNOWLEDGE_DATE) + '. Bau- und Vermarktungsstände sind Websiteangaben.</p>' +
     PROJECT_KNOWLEDGE.map(project => '<article class="knowledge-card"><h3>' + esc(project.name) + '</h3><ul>' + project.facts.map(fact => '<li>' + esc(fact) + '</li>').join('') + '</ul><p class="small muted">' + esc(project.note) + '</p><a href="' + esc(project.source) + '" target="_blank" rel="noopener">Projektquelle öffnen ↗</a>' + (project.model ? '<a href="' + esc(project.model) + '" target="_blank" rel="noopener">3D-Modell ↗</a>' : '') + '</article>').join('') +
     '<p class="small muted">Neue Projektarten und Regionen bleiben willkommen. Die Quellen dienen der Einordnung; über die Anfrage entscheidet RBS.</p></dialog>');
+  app.insertAdjacentHTML('beforeend', '<dialog id="guide-dialog" aria-labelledby="guide-dialog-title"><div class="close-row"><h2 id="guide-dialog-title">Vorbereitung prüfen</h2><button class="btn quiet" type="button" data-close="guide-dialog" aria-label="Schließen">×</button></div><div id="guide-preview-content"></div></dialog>');
   bindShell();
   renderList();
 }
@@ -217,10 +222,11 @@ function renderDetail() {
     (item.phone ? '<span>' + esc(item.phone) + '</span>' : '') + '</div></div>' +
     '<div class="brief"><div class="row"><div class="eyebrow">' + (item.preparation_kind === 'ai' ? 'Jarvis · KI-Vorbereitung' : 'Jarvis · Vorbereitung') + '</div><span class="small muted">Anfrageangaben &amp; Projektquellen</span></div><div class="intent-tags">' + assistance.signals.map(signal => '<span class="tag">' + esc(signal) + '</span>').join('') +
     '</div><p>' + esc(item.summary) + '</p>' + (item.missing?.length ? '<ul class="missing-list">' + item.missing.map(m => '<li>' + esc(m) + '</li>').join('') + '</ul>' : '') +
-    '</div>' + renderAssistance(assistance, item, owned) + '<div class="owner-line"><p>Verantwortlich<br><strong>' + esc(item.owner_id ? item.owner_name || state.member.display_name : 'Noch offen') + '</strong></p>' +
+    '</div><div class="owner-line"><p>Verantwortlich<br><strong>' + esc(item.owner_id ? item.owner_name || state.member.display_name : 'Noch offen') + '</strong></p>' +
     (!item.owner_id ? '<button class="btn primary" type="button" data-action="claim">Anfrage übernehmen</button>' :
       '<label class="small">Status <select class="status-select" id="status-select"' + disabled + '>' +
       options({ in_progress: 'In Bearbeitung', waiting: 'Wartet auf Rückmeldung', done: 'Erledigt' }, item.status) + '</select></label>') + '</div>' +
+    renderGuide(item, state.current.guide, { owned, hidden: hiddenGuides.has(item.id) }) + renderAssistance(assistance, item, owned) +
     '<form id="detail-form"><section class="section"><h3>Nächster Schritt</h3><div class="form-grid">' +
     '<div class="field"><label for="next-step">Was steht an?</label><input id="next-step" maxlength="500" value="' + esc(item.next_step) + '"' + disabled + ' required></div>' +
     '<div class="field"><label for="due-on">' + (hasOverdue ? 'Wiedervorlage · fällig' : 'Wiedervorlage') + '</label><input id="due-on" type="date" value="' + esc(item.due_on?.slice(0, 10) || '') + '"' + disabled + '></div>' +
@@ -261,7 +267,7 @@ function eventText(event) {
   const text = { created: event.detail?.source === 'website' ? 'Websiteanfrage eingegangen' : 'Anfrage aufgenommen',
     claimed: 'Anfrage übernommen', saved: 'Bearbeitung gespeichert', reviewed: 'Antwortentwurf geprüft · Versand erfolgt separat',
     prepared: 'Vorbereitung aktualisiert', note: event.detail?.note || 'Notiz hinzugefügt',
-    status: 'Status: ' + (statuses[event.detail?.status] || '') };
+    status: 'Status: ' + (statuses[event.detail?.status] || ''), guide: 'Jarvis-Weg: ' + (event.detail?.label || 'Weg aktualisiert') };
   return text[event.action] || event.action;
 }
 function editValues() {
@@ -278,7 +284,7 @@ async function loadCases(more = false) {
 async function openCase(id, keepEdits = false) {
   if (state.dirty && !keepEdits && !confirm('Ihre Änderungen sind noch nicht gespeichert. Trotzdem den Vorgang wechseln?')) return;
   const edits = keepEdits && state.current ? editValues() : null;
-  state.current = state.demo ? { item: state.items.find(item => item.id === id), events: demoEvents[id] || [] } : await api('cases/' + id);
+  state.current = state.demo ? { item: state.items.find(item => item.id === id), events: demoEvents[id] || [], guide: demoGuides[id] || initialGuide(state.items.find(item => item.id === id).kind) } : await api('cases/' + id);
   state.dirty = false;
   renderDetail();
   if (edits) {
@@ -298,9 +304,9 @@ async function act(action, fields = {}) {
     else await post('cases/' + id + '/actions', { ...fields, action, version: state.current.item.version });
     state.dirty = false;
     await loadCases();
-    await openCase(id);
+    await openCase(id, action === 'guide' && keep);
     message(action === 'review' ? 'Entwurf als geprüft markiert. Es wurde keine Nachricht versendet.' :
-      action === 'claim' ? 'Übernommen. Der Vorgang ist jetzt Ihnen zugeordnet.' : 'Gespeichert.', 'success');
+      action === 'claim' ? 'Übernommen. Der Vorgang ist jetzt Ihnen zugeordnet.' : action === 'guide' ? 'Weg gemerkt. Es wurde keine Nachricht versendet.' : 'Gespeichert.', 'success');
   } catch (error) {
     if (error.status === 409 && keep) {
       await openCase(id, true).catch(() => {});
@@ -329,6 +335,13 @@ function bindShell() {
     }
     const card = event.target.closest('[data-case]');
     if (card) { await openCase(card.dataset.case).catch(error => message(error.message, 'error')); return; }
+    const guideButton = event.target.closest('[data-guide-op]');
+    if (guideButton && !guideButton.disabled) {
+      guideButton.disabled = true;
+      await act('guide', { operation: guideButton.dataset.guideOp, target: guideButton.dataset.guideTarget });
+      if (guideButton.isConnected) guideButton.disabled = false;
+      return;
+    }
     const button = event.target.closest('[data-action]');
     if (!button || button.disabled) return;
     const action = button.dataset.action;
@@ -337,6 +350,38 @@ function bindShell() {
       if (action === 'new') document.getElementById('new-dialog').showModal();
       if (action === 'settings') document.getElementById('settings-dialog').showModal();
       if (action === 'knowledge') document.getElementById('knowledge-dialog').showModal();
+      if (action === 'guide-hide' || action === 'guide-show') {
+        const item = state.current.item;
+        if (action === 'guide-hide') hiddenGuides.add(item.id); else hiddenGuides.delete(item.id);
+        document.getElementById('jarvis-guide').outerHTML = renderGuide(item, state.current.guide, {
+          owned: item.owner_id === state.member.id, hidden: hiddenGuides.has(item.id) });
+      }
+      if (action === 'guide-preview') {
+        const item = state.current.item;
+        if (item.owner_id !== state.member.id) throw new Error('Bitte den Vorgang zuerst übernehmen.');
+        const plan = guidePlan({ ...item.original_data, request_kind: item.kind }, state.current.guide, item.project_key);
+        if (!plan) return;
+        guidePreview = { caseId: item.id, plan };
+        document.getElementById('guide-preview-content').innerHTML = renderGuidePreview(plan, {
+          edited: state.dirty || item.draft_state !== 'suggested', due: document.getElementById('due-on').value });
+        document.getElementById('guide-dialog-title').textContent = plan.title;
+        document.getElementById('guide-dialog').showModal();
+      }
+      if (action === 'guide-apply-step' || action === 'guide-apply-draft') {
+        if (!guidePreview || guidePreview.caseId !== state.current.item.id) return;
+        document.getElementById('next-step').value = guidePreview.plan.next_step;
+        if (action === 'guide-apply-draft' && guidePreview.plan.draft) document.getElementById('draft-text').value = guidePreview.plan.draft;
+        const due = document.getElementById('guide-date');
+        if (due) document.getElementById('due-on').value = due.value;
+        state.dirty = true;
+        document.getElementById('guide-dialog').close();
+        guidePreview = null;
+        message('Vorschlag in die Bearbeitung übernommen. Bitte prüfen und speichern.');
+      }
+      if (action === 'guide-complete') {
+        if (state.dirty) { message('Bitte zuerst Ihre Änderungen speichern.', 'error'); return; }
+        await act('status', { status: 'done' });
+      }
       if (action === 'adopt-project') {
         if (state.current.item.owner_id !== state.member.id) throw new Error('Bitte den Vorgang zuerst übernehmen.');
         const a = analyzeInquiry(state.current.item.original_data);
@@ -422,6 +467,7 @@ function bindShell() {
 }
 
 const demoEvents = {};
+const demoGuides = {};
 function demoCase(raw, id, overrides = {}) {
   const kind = raw.request_kind || 'contact';
   const item = { id, kind, contact_name: raw.name, email: raw.email || '', phone: '', company: raw.company || '', location: raw.city || '',
@@ -429,6 +475,7 @@ function demoCase(raw, id, overrides = {}) {
     draft_state: 'suggested', status: 'new', owner_id: null, project_key: raw.project_id || '', due_on: null,
     version: 1, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), ...overrides };
   demoEvents[id] = [{ action: 'created', detail: { source: 'website' }, created_at: item.created_at }];
+  demoGuides[id] = initialGuide(kind);
   return item;
 }
 function demoMutation(action, fields) {
@@ -437,6 +484,10 @@ function demoMutation(action, fields) {
   if (action === 'save') { if (item.draft !== fields.draft) item.draft_state = 'edited'; Object.assign(item, fields); }
   if (action === 'status') item.status = fields.status;
   if (action === 'review') item.draft_state = 'reviewed';
+  if (action === 'guide') {
+    demoGuides[item.id] = advanceGuide(item.kind, demoGuides[item.id], fields.operation, fields.target);
+    fields = { ...demoGuides[item.id], label: guideNode(item.kind, demoGuides[item.id].path.at(-1)).label, case_version: item.version + 1 };
+  }
   demoEvents[item.id].push({ action: action === 'claim' ? 'claimed' : action === 'save' ? 'saved' : action === 'review' ? 'reviewed' : action,
     detail: fields, actor_name: state.member.display_name, created_at: new Date().toISOString() });
   item.version++;

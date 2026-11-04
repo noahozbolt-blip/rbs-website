@@ -1,6 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { prepareInquiry, analyzeInquiry } from '../portal/jarvis.mjs';
 import { PROJECT_OPTIONS } from '../portal/project-knowledge.mjs';
+import { normalizeGuide, advanceGuide, guideNode } from '../portal/guide.mjs';
 
 export class PortalError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -132,7 +133,13 @@ export async function getCase(db, id) {
   if (!item) throw new PortalError(404, 'Vorgang nicht gefunden.');
   const events = (await db.pool.query('SELECT e.id,e.action,e.detail,e.created_at,m.display_name AS actor_name ' +
     'FROM rbs_portal_events e LEFT JOIN rbs_portal_members m ON m.id=e.actor_id WHERE e.case_id=$1 ORDER BY e.created_at ASC LIMIT 500', [id])).rows;
-  return { item: presentCase(item), events };
+  return { item: presentCase(item), events, guide: await readGuide(db.pool, item) };
+}
+
+async function readGuide(client, item) {
+  const result = await client.query("SELECT detail FROM rbs_portal_events WHERE case_id=$1 AND action='guide' " +
+    "ORDER BY (detail->>'case_version')::int DESC NULLS LAST,created_at DESC,id DESC LIMIT 1", [item.id]);
+  return normalizeGuide(item.kind, result.rows[0]?.detail);
 }
 
 function presentCase(item) {
@@ -172,6 +179,15 @@ export async function mutateCase(db, id, member, input, prepared) {
         await client.query('UPDATE rbs_portal_cases SET draft=$1,draft_state=$2,next_step=$3,due_on=$4,project_key=$5,version=version+1,updated_at=now() WHERE id=$6',
           [draft, draft === item.draft ? item.draft_state : 'edited', next, due || null, project, id]);
         await addEvent(client, id, member.id, 'saved');
+      } else if (input.action === 'guide') {
+        const previous = await readGuide(client, item);
+        let guide;
+        try { guide = advanceGuide(item.kind, previous, input.operation, input.target); }
+        catch (error) { throw new PortalError(400, error.message); }
+        if (JSON.stringify(guide.path) === JSON.stringify(previous.path)) return item;
+        await addEvent(client, id, member.id, 'guide', { ...guide,
+          label: guideNode(item.kind, guide.path.at(-1)).label, case_version: item.version + 1 });
+        await client.query('UPDATE rbs_portal_cases SET version=version+1,updated_at=now() WHERE id=$1', [id]);
       } else if (input.action === 'status') {
         if (!STATUSES.has(input.status) || input.status === 'new') throw new PortalError(400, 'Ungültiger Bearbeitungsstatus.');
         await client.query('UPDATE rbs_portal_cases SET status=$1,version=version+1,updated_at=now() WHERE id=$2', [input.status, id]);
